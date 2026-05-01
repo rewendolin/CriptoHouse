@@ -7,14 +7,14 @@ const fmtUSD = (n, opts = {}) => {
   const { compact = false, decimals } = opts;
   if (n == null || isNaN(n)) return "—";
   const abs = Math.abs(n);
-  if (compact && abs >= 1e6) return "$" + (n/1e6).toFixed(2) + "M";
-  if (compact && abs >= 1e3) return "$" + (n/1e3).toFixed(1) + "K";
-  const d = decimals != null ? decimals : (abs < 1 ? 4 : abs < 100 ? 2 : 2);
-  return "$" + n.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+  if (compact && abs >= 1e6) return (n/1e6).toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "M€";
+  if (compact && abs >= 1e3) return (n/1e3).toLocaleString("es-ES", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + "K€";
+  const d = decimals != null ? decimals : (abs < 1 ? 4 : 2);
+  return n.toLocaleString("es-ES", { minimumFractionDigits: d, maximumFractionDigits: d }) + "€";
 };
 const fmtNum = (n, decimals = 2) => {
   if (n == null || isNaN(n)) return "—";
-  return n.toLocaleString("en-US", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+  return n.toLocaleString("es-ES", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
 };
 const fmtPct = (n, decimals = 2) => {
   if (n == null || isNaN(n)) return "—";
@@ -197,9 +197,9 @@ const AreaChart = ({ series, height = 260, color = "var(--accent)", showAxes = t
           pointerEvents: "none"
         }}>
           <div style={{ color: "var(--fg-3)", fontSize: 10.5, marginBottom: 3 }}>
-            {new Date(hover.t).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+            {new Date(hover.t).toLocaleDateString("es-ES", { month: "short", day: "numeric", year: "numeric" })}
           </div>
-          <div style={{ fontSize: 13 }}>${hover.v.toLocaleString("en-US", { maximumFractionDigits: 0 })}</div>
+          <div style={{ fontSize: 13 }}>{hover.v.toLocaleString("es-ES", { maximumFractionDigits: 0 })}€</div>
         </div>
       )}
     </div>
@@ -301,4 +301,19 @@ const Icon = ({ name, size = 16 }) => {
   );
 };
 
-Object.assign(window, { fmtUSD, fmtNum, fmtPct, fmtAddr, TokenDot, TokenChip, Money, NumberV, Sparkline, Donut, AreaChart, useLivePrices, useI18n, Icon });
+const showToast = (msg, duration = 3000) => {
+  let container = document.getElementById('ch-toast');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'ch-toast';
+    container.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none;';
+    document.body.appendChild(container);
+  }
+  const el = document.createElement('div');
+  el.style.cssText = 'background:var(--bg-2);color:var(--fg-0);border:1px solid var(--border);border-radius:8px;padding:10px 20px;font-size:13px;box-shadow:0 4px 16px rgba(0,0,0,0.4);text-align:center;font-family:var(--font-sans);opacity:1;transition:opacity 0.3s;white-space:nowrap;';
+  el.textContent = msg;
+  container.appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, duration);
+};
+
+Object.assign(window, { fmtUSD, fmtNum, fmtPct, fmtAddr, TokenDot, TokenChip, Money, NumberV, Sparkline, Donut, AreaChart, useLivePrices, useI18n, Icon, showToast });

@@ -374,7 +374,7 @@ function PagePositions({ t, prices, tick }) {
     <div className="row" style={{ alignItems:"flex-start", gap:18 }}>
       <div style={{ flex:1, display:"flex", flexDirection:"column", gap:14 }}>
         <div className="row">
-          <button className="btn"><Icon name="plus" size={13}/>{t("addPosition")}</button>
+          <button className="btn" onClick={() => showToast(t("addPosition") + ": próximamente")}><Icon name="plus" size={13}/>{t("addPosition")}</button>
           <div style={{ flex:1 }}/>
           <button className="btn"><Icon name="extLink" size={13}/>{t("csvSnapshot")}</button>
         </div>
@@ -461,7 +461,7 @@ function PageAccounts({ t, prices, tick }) {
         <button className="btn">{t("group")}</button>
         <button className="btn">{t("type")}</button>
         <div style={{ flex:1 }}/>
-        <button className="btn"><Icon name="plus" size={13}/>{t("addAccount")}</button>
+        <button className="btn" onClick={() => showToast(t("addAccount") + ": próximamente")}><Icon name="plus" size={13}/>{t("addAccount")}</button>
         <button className="btn-ghost btn">{t("bulkImport")}</button>
       </div>
 
@@ -546,7 +546,7 @@ function PageStrategies({ t, prices, tick }) {
         <div className="card">
           <div className="card-head">
             <div className="card-title">{t("funding")}<span className="mono blur" style={{ marginLeft: 8, color:"var(--fg-2)" }}>{fmtUSD(s.deployedValue, {decimals:0})}</span></div>
-            <button className="btn"><Icon name="plus" size={13}/>{t("add")}</button>
+            <button className="btn" onClick={() => showToast(t("add") + ": próximamente")}><Icon name="plus" size={13}/>{t("add")}</button>
           </div>
           <table className="table">
             <thead><tr><th>{t("asset")}</th><th>{t("operation")}</th><th>{t("date")}</th><th className="right">{t("amount")}</th><th className="right">USD</th><th>{t("notes")}</th></tr></thead>
