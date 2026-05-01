@@ -301,6 +301,46 @@ const Icon = ({ name, size = 16 }) => {
   );
 };
 
+const inputSx = {
+  width:"100%", background:"var(--bg-2)", border:"1px solid var(--border)",
+  borderRadius:6, padding:"8px 10px", fontSize:13, color:"var(--fg-0)",
+  fontFamily:"var(--font-sans)", boxSizing:"border-box", outline:"none"
+};
+
+const Field = ({ label, children }) => (
+  <div style={{ marginBottom:14 }}>
+    <label style={{ display:"block", fontSize:11, color:"var(--fg-3)", textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:5 }}>{label}</label>
+    {children}
+  </div>
+);
+
+const Modal = ({ open, onClose, title, onSubmit, children }) => {
+  if (!open) return null;
+  return (
+    <div style={{
+      position:"fixed", inset:0, zIndex:2000,
+      background:"rgba(0,0,0,0.65)", display:"flex",
+      alignItems:"center", justifyContent:"center", padding:24
+    }} onClick={onClose}>
+      <div style={{
+        background:"var(--bg-1)", border:"1px solid var(--border)",
+        borderRadius:12, padding:24, width:460, maxHeight:"90vh", overflowY:"auto",
+        boxShadow:"0 12px 40px rgba(0,0,0,0.5)"
+      }} onClick={e => e.stopPropagation()}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20 }}>
+          <div style={{ fontWeight:600, fontSize:15, color:"var(--fg-0)" }}>{title}</div>
+          <button onClick={onClose} style={{ background:"none", border:"none", color:"var(--fg-3)", cursor:"pointer", fontSize:22, lineHeight:1, padding:"0 4px" }}>×</button>
+        </div>
+        {children}
+        <div style={{ display:"flex", gap:8, justifyContent:"flex-end", marginTop:20 }}>
+          <button className="btn" onClick={onClose}>Cancelar</button>
+          <button className="btn btn-primary" onClick={onSubmit}>Guardar</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const showToast = (msg, duration = 3000) => {
   let container = document.getElementById('ch-toast');
   if (!container) {
@@ -316,4 +356,4 @@ const showToast = (msg, duration = 3000) => {
   setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, duration);
 };
 
-Object.assign(window, { fmtUSD, fmtNum, fmtPct, fmtAddr, TokenDot, TokenChip, Money, NumberV, Sparkline, Donut, AreaChart, useLivePrices, useI18n, Icon, showToast });
+Object.assign(window, { fmtUSD, fmtNum, fmtPct, fmtAddr, TokenDot, TokenChip, Money, NumberV, Sparkline, Donut, AreaChart, useLivePrices, useI18n, Icon, showToast, Modal, Field, inputSx });

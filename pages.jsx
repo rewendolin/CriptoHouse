@@ -349,42 +349,82 @@ function PageAssets({ t, prices, sparks, tick }) {
 function PagePositions({ t, prices, tick }) {
   const data = window.CH_DATA;
   const [filter, setFilter] = useStateP("All");
+  const [showModal, setShowModal] = useStateP(false);
+  const [positions, setPositions] = useStateP(() => [...data.positions]);
+  const blank = { asset:"BTC", protocol:"", network:"Ethereum", account:data.accounts[0]?.id||"", category:"Lending", apy:"", amount:"" };
+  const [form, setForm] = useStateP(blank);
+  const upd = k => e => setForm(f => ({...f, [k]: e.target.value}));
 
-  const enriched = data.positions.map(p => {
+  const handleAdd = () => {
+    if (!form.protocol || !form.amount) { showToast("Completa protocolo y cantidad"); return; }
+    const pos = { id:"pos_"+Date.now(), asset:form.asset, protocol:form.protocol, network:form.network,
+      account:form.account, category:form.category, apy:parseFloat(form.apy)||0,
+      amount:parseFloat(form.amount)||0, collateral:"—" };
+    const updated = [...positions, pos];
+    setPositions(updated); data.positions = updated;
+    setForm(blank); setShowModal(false); showToast("Posición añadida ✓");
+  };
+
+  const enriched = positions.map(p => {
     const acc = data.accounts.find(a => a.id === p.account);
     let value = p.amount;
     if (!p.asset.includes("/") && !p.asset.includes("-")) {
-      const tk = prices[p.asset];
-      if (tk) value = p.amount * tk.price;
+      const tk = prices[p.asset]; if (tk) value = p.amount * tk.price;
     }
     return { ...p, account: acc, value };
   });
 
-  const byCategory = enriched.reduce((m, p) => {
-    (m[p.category] = m[p.category] || []).push(p);
-    return m;
-  }, {});
-
+  const byCategory = enriched.reduce((m, p) => { (m[p.category] = m[p.category] || []).push(p); return m; }, {});
   const categories = Object.keys(byCategory);
-  const filtered = filter === "All" ? enriched : enriched.filter(p => p.category === filter);
   const totalsByCat = Object.fromEntries(categories.map(c => [c, byCategory[c].reduce((s,p) => s + p.value, 0)]));
   const grandTotal = enriched.reduce((s,p) => s + p.value, 0);
 
   return (
     <div className="row" style={{ alignItems:"flex-start", gap:18 }}>
+      <Modal open={showModal} onClose={() => setShowModal(false)} title={t("addPosition")} onSubmit={handleAdd}>
+        <Field label="Token">
+          <select value={form.asset} onChange={upd("asset")} style={inputSx}>
+            {Object.keys(data.tokens).map(s => <option key={s} value={s}>{s} — {data.tokens[s].name}</option>)}
+          </select>
+        </Field>
+        <Field label="Protocolo">
+          <input value={form.protocol} onChange={upd("protocol")} placeholder="Aave V3, Uniswap..." style={inputSx}/>
+        </Field>
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+          <Field label="Red">
+            <input value={form.network} onChange={upd("network")} placeholder="Ethereum, Arbitrum..." style={inputSx}/>
+          </Field>
+          <Field label="Categoría">
+            <select value={form.category} onChange={upd("category")} style={inputSx}>
+              {["Lending","LP","Staking","Perp","Yield","Farming"].map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </Field>
+        </div>
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+          <Field label="APY (%)">
+            <input value={form.apy} onChange={upd("apy")} type="number" step="0.01" placeholder="5.20" style={inputSx}/>
+          </Field>
+          <Field label={t("amount")}>
+            <input value={form.amount} onChange={upd("amount")} type="number" step="any" placeholder="1000" style={inputSx}/>
+          </Field>
+        </div>
+        <Field label="Cuenta">
+          <select value={form.account} onChange={upd("account")} style={inputSx}>
+            {data.accounts.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+          </select>
+        </Field>
+      </Modal>
+
       <div style={{ flex:1, display:"flex", flexDirection:"column", gap:14 }}>
         <div className="row">
-          <button className="btn" onClick={() => showToast(t("addPosition") + ": próximamente")}><Icon name="plus" size={13}/>{t("addPosition")}</button>
+          <button className="btn" onClick={() => setShowModal(true)}><Icon name="plus" size={13}/>{t("addPosition")}</button>
           <div style={{ flex:1 }}/>
           <button className="btn"><Icon name="extLink" size={13}/>{t("csvSnapshot")}</button>
         </div>
         {(filter === "All" ? categories : [filter]).map(cat => (
           <div key={cat} className="card">
             <div className="card-head">
-              <div className="card-title">
-                {cat}
-                <span className="count">{byCategory[cat].length}</span>
-              </div>
+              <div className="card-title">{cat}<span className="count">{byCategory[cat].length}</span></div>
               <div className="mono blur" style={{ color:"var(--fg-1)" }}>{fmtUSD(totalsByCat[cat], {decimals:0})}</div>
             </div>
             <table className="table">
@@ -436,23 +476,61 @@ function PagePositions({ t, prices, tick }) {
 function PageAccounts({ t, prices, tick }) {
   const data = window.CH_DATA;
   const [search, setSearch] = useStateP("");
+  const [showModal, setShowModal] = useStateP(false);
+  const [accounts, setAccounts] = useStateP(() => [...data.accounts]);
+  const blank = { name:"", group:"Cold Wallet", type:"EVM", network:"Ethereum", address:"", description:"" };
+  const [form, setForm] = useStateP(blank);
+  const upd = k => e => setForm(f => ({...f, [k]: e.target.value}));
 
-  // Calculate balance per account from holdings
+  const handleAdd = () => {
+    if (!form.name) { showToast("El nombre es obligatorio"); return; }
+    const acc = { id:"acc-"+Date.now(), name:form.name, group:form.group, type:form.type,
+      network:form.network, address:form.address||"—", description:form.description, balance:0 };
+    const updated = [...accounts, acc];
+    setAccounts(updated); data.accounts = updated;
+    setForm(blank); setShowModal(false); showToast("Cuenta añadida ✓");
+  };
+
   const balances = useMemoP(() => {
     const m = {};
-    data.holdings.forEach(h => {
-      m[h.account] = (m[h.account] || 0) + h.amount * (prices[h.token]?.price || 0);
-    });
+    data.holdings.forEach(h => { m[h.account] = (m[h.account] || 0) + h.amount * (prices[h.token]?.price || 0); });
     return m;
   }, [tick]);
 
-  const filtered = data.accounts.filter(a =>
+  const filtered = accounts.filter(a =>
     !search || a.name.toLowerCase().includes(search.toLowerCase()) || a.address.toLowerCase().includes(search.toLowerCase())
   );
   const totalBalance = Object.values(balances).reduce((s,v) => s+v, 0);
 
   return (
     <div className="col">
+      <Modal open={showModal} onClose={() => setShowModal(false)} title={t("addAccount")} onSubmit={handleAdd}>
+        <Field label={t("name")}>
+          <input value={form.name} onChange={upd("name")} placeholder="Ledger Backup, Kraken..." style={inputSx}/>
+        </Field>
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+          <Field label={t("group")}>
+            <select value={form.group} onChange={upd("group")} style={inputSx}>
+              {["Cold Wallet","Hot Wallet","Hot Trading","CEX","DeFi"].map(g => <option key={g} value={g}>{g}</option>)}
+            </select>
+          </Field>
+          <Field label={t("type")}>
+            <select value={form.type} onChange={upd("type")} style={inputSx}>
+              {["EVM","SVM","CEX","BTC"].map(tp => <option key={tp} value={tp}>{tp}</option>)}
+            </select>
+          </Field>
+        </div>
+        <Field label={t("network")}>
+          <input value={form.network} onChange={upd("network")} placeholder="Ethereum, Solana, Arbitrum..." style={inputSx}/>
+        </Field>
+        <Field label={t("address")}>
+          <input value={form.address} onChange={upd("address")} placeholder="0x... / dirección de wallet" style={inputSx}/>
+        </Field>
+        <Field label={t("description")}>
+          <input value={form.description} onChange={upd("description")} placeholder="Descripción opcional..." style={inputSx}/>
+        </Field>
+      </Modal>
+
       <div className="row">
         <div className="search">
           <Icon name="search" size={14}/>
@@ -461,7 +539,7 @@ function PageAccounts({ t, prices, tick }) {
         <button className="btn">{t("group")}</button>
         <button className="btn">{t("type")}</button>
         <div style={{ flex:1 }}/>
-        <button className="btn" onClick={() => showToast(t("addAccount") + ": próximamente")}><Icon name="plus" size={13}/>{t("addAccount")}</button>
+        <button className="btn" onClick={() => setShowModal(true)}><Icon name="plus" size={13}/>{t("addAccount")}</button>
         <button className="btn-ghost btn">{t("bulkImport")}</button>
       </div>
 
@@ -496,7 +574,7 @@ function PageAccounts({ t, prices, tick }) {
           <tfoot>
             <tr>
               <td colSpan={6} style={{ padding:"10px 14px", color:"var(--fg-3)", fontSize:11, borderTop:"1px solid var(--line)", background:"var(--bg-2)" }}>
-                {t("accounts2")}: {filtered.length} / {data.accounts.length}
+                {t("accounts2")}: {filtered.length} / {accounts.length}
               </td>
               <td className="num blur" style={{ borderTop:"1px solid var(--line)", background:"var(--bg-2)", fontWeight:600 }}>{fmtUSD(totalBalance, {decimals:0})}</td>
               <td style={{ borderTop:"1px solid var(--line)", background:"var(--bg-2)" }}/>
@@ -513,6 +591,24 @@ function PageStrategies({ t, prices, tick }) {
   const data = window.CH_DATA;
   const [selected, setSelected] = useStateP(data.strategies[0].id);
   const s = data.strategies.find(x => x.id === selected);
+  const [showFundModal, setShowFundModal] = useStateP(false);
+  const [fundMap, setFundMap] = useStateP(() => {
+    const m = {};
+    data.strategies.forEach(st => { m[st.id] = [{ id:"f0", asset:"USDC", op:"Depósito", date:"2026-02-04", amount:30000, value:st.deployedValue, notes:"Capital inicial" }]; });
+    return m;
+  });
+  const blankFund = { asset:"USDC", op:"Depósito", amount:"", notes:"" };
+  const [fundForm, setFundForm] = useStateP(blankFund);
+  const updF = k => e => setFundForm(f => ({...f, [k]: e.target.value}));
+
+  const handleAddFund = () => {
+    if (!fundForm.amount) { showToast("Introduce la cantidad"); return; }
+    const entry = { id:"f"+Date.now(), asset:fundForm.asset, op:fundForm.op,
+      date: new Date().toISOString().slice(0,10),
+      amount: parseFloat(fundForm.amount)||0, value: parseFloat(fundForm.amount)||0, notes: fundForm.notes };
+    setFundMap(m => ({...m, [selected]: [...(m[selected]||[]), entry]}));
+    setFundForm(blankFund); setShowFundModal(false); showToast("Movimiento añadido ✓");
+  };
   const seriesRef = useRefP({});
   if (!seriesRef.current[selected]) {
     seriesRef.current[selected] = {
@@ -543,22 +639,46 @@ function PageStrategies({ t, prices, tick }) {
           <MiniCard label={t("currentPnL")} value={s.pnl} series={series.pnl} color={s.pnl >= 0 ? "var(--pos)" : "var(--neg)"} positive={s.pnl >= 0}/>
         </div>
 
+        <Modal open={showFundModal} onClose={() => setShowFundModal(false)} title={t("add") + " " + t("funding")} onSubmit={handleAddFund}>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+            <Field label="Token">
+              <select value={fundForm.asset} onChange={updF("asset")} style={inputSx}>
+                {["USDC","USDT","USDH","BTC","ETH","SOL"].map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </Field>
+            <Field label="Operación">
+              <select value={fundForm.op} onChange={updF("op")} style={inputSx}>
+                <option value="Depósito">Depósito</option>
+                <option value="Retiro">Retiro</option>
+              </select>
+            </Field>
+          </div>
+          <Field label={t("amount")}>
+            <input value={fundForm.amount} onChange={updF("amount")} type="number" step="any" placeholder="10000" style={inputSx}/>
+          </Field>
+          <Field label={t("notes")}>
+            <input value={fundForm.notes} onChange={updF("notes")} placeholder="Descripción opcional..." style={inputSx}/>
+          </Field>
+        </Modal>
+
         <div className="card">
           <div className="card-head">
             <div className="card-title">{t("funding")}<span className="mono blur" style={{ marginLeft: 8, color:"var(--fg-2)" }}>{fmtUSD(s.deployedValue, {decimals:0})}</span></div>
-            <button className="btn" onClick={() => showToast(t("add") + ": próximamente")}><Icon name="plus" size={13}/>{t("add")}</button>
+            <button className="btn" onClick={() => setShowFundModal(true)}><Icon name="plus" size={13}/>{t("add")}</button>
           </div>
           <table className="table">
-            <thead><tr><th>{t("asset")}</th><th>{t("operation")}</th><th>{t("date")}</th><th className="right">{t("amount")}</th><th className="right">USD</th><th>{t("notes")}</th></tr></thead>
+            <thead><tr><th>{t("asset")}</th><th>{t("operation")}</th><th>{t("date")}</th><th className="right">{t("amount")}</th><th className="right">EUR</th><th>{t("notes")}</th></tr></thead>
             <tbody>
-              <tr>
-                <td><TokenChip symbol="USDC"/></td>
-                <td><span className="pill pos">{t("addedFunding")}</span></td>
-                <td className="mono" style={{color:"var(--fg-2)"}}>2026-02-04</td>
-                <td className="num blur">30,000</td>
-                <td className="num blur">{fmtUSD(s.deployedValue, {decimals:0})}</td>
-                <td style={{ color:"var(--fg-2)", fontSize:12 }}>{t("addingFunding")}</td>
-              </tr>
+              {(fundMap[selected]||[]).map(e => (
+                <tr key={e.id}>
+                  <td><TokenChip symbol={e.asset}/></td>
+                  <td><span className={"pill " + (e.op === "Depósito" ? "pos" : "neg")}>{e.op}</span></td>
+                  <td className="mono" style={{color:"var(--fg-2)"}}>{e.date}</td>
+                  <td className="num blur">{fmtNum(e.amount, 0)}</td>
+                  <td className="num blur">{fmtUSD(e.value, {decimals:0})}</td>
+                  <td style={{ color:"var(--fg-2)", fontSize:12 }}>{e.notes}</td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
