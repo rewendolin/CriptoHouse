@@ -2,6 +2,132 @@
 
 const { useState: useS, useEffect: useE, useMemo: useM, useRef: useR } = React;
 
+// --- Auth & persistence ---
+const CH_PASS_KEY  = 'ch_pass';
+const CH_DATA_KEY  = 'ch_udata';
+
+function simpleHash(s) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (Math.imul(31, h) + s.charCodeAt(i)) | 0;
+  return h.toString(36);
+}
+
+function loadUserData() {
+  try {
+    const raw = localStorage.getItem(CH_DATA_KEY);
+    if (!raw) return;
+    const d = JSON.parse(raw);
+    if (d.accounts)   window.CH_DATA.accounts   = d.accounts;
+    if (d.holdings)   window.CH_DATA.holdings   = d.holdings;
+    if (d.positions)  window.CH_DATA.positions  = d.positions;
+    if (d.strategies) window.CH_DATA.strategies = d.strategies;
+    if (d.airdrops)   window.CH_DATA.airdrops   = d.airdrops;
+  } catch(e) { console.error('loadUserData', e); }
+}
+
+function saveUserData() {
+  const d = window.CH_DATA;
+  try {
+    localStorage.setItem(CH_DATA_KEY, JSON.stringify({
+      accounts: d.accounts, holdings: d.holdings,
+      positions: d.positions, strategies: d.strategies, airdrops: d.airdrops,
+    }));
+  } catch(e) { console.error('saveUserData', e); }
+}
+window.CH_SAVE = saveUserData;
+
+// --- Login screen ---
+function LoginScreen({ onLogin }) {
+  const hasPass = !!localStorage.getItem(CH_PASS_KEY);
+  const [pass, setPass]   = useS('');
+  const [pass2, setPass2] = useS('');
+  const [show, setShow]   = useS(false);
+  const [err, setErr]     = useS('');
+
+  const submit = (e) => {
+    if (e) e.preventDefault();
+    if (!pass) return setErr('Introduce una contraseña');
+    if (!hasPass) {
+      if (pass.length < 4)    return setErr('Mínimo 4 caracteres');
+      if (pass !== pass2)     return setErr('Las contraseñas no coinciden');
+      localStorage.setItem(CH_PASS_KEY, simpleHash(pass));
+    } else {
+      if (simpleHash(pass) !== localStorage.getItem(CH_PASS_KEY)) {
+        setPass(''); return setErr('Contraseña incorrecta');
+      }
+    }
+    onLogin();
+  };
+
+  const sx = {
+    width:'100%', background:'var(--bg-2)', border:'1px solid var(--border)',
+    borderRadius:6, padding:'10px 12px', fontSize:14, color:'var(--fg-0)',
+    fontFamily:'var(--font-sans)', boxSizing:'border-box', outline:'none',
+  };
+
+  return (
+    <div style={{ minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', background:'var(--bg-0)', fontFamily:'var(--font-sans)' }}>
+      <div style={{ width:340, background:'var(--bg-1)', border:'1px solid var(--border)', borderRadius:16, padding:36, boxShadow:'0 24px 64px rgba(0,0,0,0.5)' }}>
+        <div style={{ textAlign:'center', marginBottom:28 }}>
+          <div style={{ fontSize:30, fontWeight:700, letterSpacing:'-0.02em', color:'var(--fg-0)' }}>
+            cripto<span style={{ color:'var(--accent)' }}>house</span>
+          </div>
+          <div style={{ color:'var(--fg-3)', fontSize:13, marginTop:8 }}>
+            {hasPass ? 'Accede a tu portfolio privado' : 'Crea tu contraseña de acceso'}
+          </div>
+        </div>
+
+        <form onSubmit={submit}>
+          <div style={{ marginBottom:14 }}>
+            <label style={{ display:'block', fontSize:11, color:'var(--fg-3)', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:6 }}>Contraseña</label>
+            <div style={{ position:'relative' }}>
+              <input
+                type={show ? 'text' : 'password'}
+                value={pass}
+                onChange={e => { setPass(e.target.value); setErr(''); }}
+                placeholder="••••••••"
+                autoFocus
+                style={{ ...sx, paddingRight:40 }}
+              />
+              <button type="button" onClick={() => setShow(s => !s)}
+                style={{ position:'absolute', right:10, top:'50%', transform:'translateY(-50%)', background:'none', border:'none', color:'var(--fg-3)', cursor:'pointer', padding:0, display:'flex', alignItems:'center' }}>
+                <Icon name={show ? 'eyeOff' : 'eye'} size={14}/>
+              </button>
+            </div>
+          </div>
+
+          {!hasPass && (
+            <div style={{ marginBottom:14 }}>
+              <label style={{ display:'block', fontSize:11, color:'var(--fg-3)', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:6 }}>Confirmar contraseña</label>
+              <input
+                type={show ? 'text' : 'password'}
+                value={pass2}
+                onChange={e => { setPass2(e.target.value); setErr(''); }}
+                placeholder="••••••••"
+                style={sx}
+              />
+            </div>
+          )}
+
+          {err && <div style={{ color:'var(--neg)', fontSize:12, marginBottom:12 }}>{err}</div>}
+
+          <button type="submit" className="btn btn-primary"
+            style={{ width:'100%', justifyContent:'center', padding:'10px 0', fontSize:14, marginTop:4 }}>
+            {hasPass ? 'Entrar' : 'Crear contraseña'}
+          </button>
+        </form>
+
+        {!hasPass && (
+          <div style={{ marginTop:16, fontSize:11, color:'var(--fg-3)', textAlign:'center', lineHeight:1.5 }}>
+            La contraseña se almacena localmente en tu navegador.<br/>No se envía ningún dato a servidores externos.
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// --- Accents & defaults ---
 const ACCENTS = {
   lime:    { color: "#c5f24a", soft: "#c5f24a26", text: "#0a0a0a", name: "Lime" },
   amber:   { color: "#f5b94a", soft: "#f5b94a26", text: "#1a0f00", name: "Amber" },
@@ -19,14 +145,33 @@ const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
   "privacy": false
 }/*EDITMODE-END*/;
 
+// --- Main App ---
 function App() {
+  const [authed, setAuthed] = useS(() => sessionStorage.getItem('ch_session') === '1');
+
+  const handleLogin = () => {
+    loadUserData();
+    sessionStorage.setItem('ch_session', '1');
+    setAuthed(true);
+  };
+
+  const handleLogout = () => {
+    sessionStorage.removeItem('ch_session');
+    setAuthed(false);
+  };
+
+  if (!authed) return <LoginScreen onLogin={handleLogin}/>;
+
+  return <AppShell onLogout={handleLogout}/>;
+}
+
+function AppShell({ onLogout }) {
   const [tweaks, setTweak] = window.useTweaks(TWEAK_DEFAULTS);
   const [page, setPage] = useS("overview");
   const [updatedAgo, setUpdatedAgo] = useS(0);
   const t = window.useI18n(tweaks.lang);
   const live = window.useLivePrices();
 
-  // Apply tweaks to root
   useE(() => {
     const a = ACCENTS[tweaks.accent] || ACCENTS.lime;
     document.documentElement.style.setProperty("--accent", a.color);
@@ -38,21 +183,18 @@ function App() {
     document.documentElement.dataset.privacy = String(tweaks.privacy);
   }, [tweaks]);
 
-  // Update "updated x seconds ago"
   useE(() => {
     setUpdatedAgo(0);
     const id = setInterval(() => setUpdatedAgo(a => a+1), 1000);
     return () => clearInterval(id);
   }, [live.tick]);
 
-  // Compute total
   const total = useM(() => {
     let s = 0;
-    window.CH_DATA.holdings.forEach(h => {
-      s += h.amount * (live.prices[h.token]?.price || 0);
-    });
+    window.CH_DATA.holdings.forEach(h => { s += h.amount * (live.prices[h.token]?.price || 0); });
     return s;
   }, [live.tick]);
+
   const prevTotal = useM(() => {
     let s = 0;
     window.CH_DATA.holdings.forEach(h => {
@@ -62,23 +204,24 @@ function App() {
     });
     return s;
   }, [live.tick]);
+
   const change = total - prevTotal;
   const changePct = prevTotal ? (change/prevTotal)*100 : 0;
 
   const navItems = [
-    { id:"overview",   icon:"overview" },
-    { id:"exposure",   icon:"exposure" },
-    { id:"performance",icon:"perf" },
-    { id:"assets",     icon:"assets" },
-    { id:"positions",  icon:"positions" },
+    { id:"overview",    icon:"overview" },
+    { id:"exposure",    icon:"exposure" },
+    { id:"performance", icon:"perf" },
+    { id:"assets",      icon:"assets" },
+    { id:"positions",   icon:"positions" },
   ];
   const navItems2 = [
-    { id:"strategies", icon:"strategies" },
-    { id:"airdrops",   icon:"airdrops" },
+    { id:"strategies",  icon:"strategies" },
+    { id:"airdrops",    icon:"airdrops" },
   ];
   const navItems3 = [
-    { id:"accounts",   icon:"accounts" },
-    { id:"settings",   icon:"settings" },
+    { id:"accounts",    icon:"accounts" },
+    { id:"settings",    icon:"settings" },
   ];
 
   const renderPage = () => {
@@ -138,7 +281,11 @@ function App() {
 
         <div className="sidebar-foot">
           <span className="live-dot"/>
-          <span>{t("livePrices")} · {t("lastUpdated").toLowerCase()} {updatedAgo}s</span>
+          <span style={{ flex:1 }}>{t("livePrices")} · {updatedAgo}s</span>
+          <button onClick={onLogout} title="Cerrar sesión"
+            style={{ background:"none", border:"none", color:"var(--fg-3)", cursor:"pointer", padding:"4px 6px", borderRadius:4, fontSize:11, display:"flex", alignItems:"center", gap:4 }}>
+            ⎋ Salir
+          </button>
         </div>
       </aside>
 
@@ -164,7 +311,7 @@ function App() {
             </select>
 
             <button className="btn"><Icon name="refresh" size={13}/>{t("refresh")}</button>
-            <div className="avatar">A</div>
+            <div className="avatar">U</div>
           </div>
         </header>
 
@@ -223,6 +370,19 @@ function App() {
 
         <window.TweakSection title={t("privacy")}>
           <window.TweakToggle value={tweaks.privacy} onChange={v => setTweak("privacy", v)} label={t("hideBalances")}/>
+        </window.TweakSection>
+
+        <window.TweakSection title="Contraseña">
+          <button className="btn" style={{ fontSize:12 }}
+            onClick={() => {
+              if (confirm("¿Cambiar contraseña? Se cerrará la sesión.")) {
+                localStorage.removeItem(CH_PASS_KEY);
+                sessionStorage.removeItem('ch_session');
+                window.location.reload();
+              }
+            }}>
+            Cambiar contraseña
+          </button>
         </window.TweakSection>
       </window.TweaksPanel>
     </div>
