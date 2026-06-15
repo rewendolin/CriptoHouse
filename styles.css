@@ -627,3 +627,87 @@ input { font-family: inherit; }
   height: 100%;
   background: var(--accent);
 }
+
+/* ---- RESPONSIVE ---- */
+.hamburger-btn {
+  display: none;
+  width: 32px; height: 32px;
+  align-items: center; justify-content: center;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  color: var(--fg-1);
+  flex-shrink: 0;
+}
+.sidebar-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  z-index: 49;
+}
+
+@media (max-width: 768px) {
+  body { overflow: auto; }
+
+  .app {
+    grid-template-columns: 1fr;
+    height: auto;
+    min-height: 100vh;
+  }
+
+  /* Sidebar como drawer deslizable */
+  .sidebar {
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    width: 260px;
+    z-index: 50;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+  }
+  .sidebar.open { transform: translateX(0); }
+  .sidebar-backdrop.open { display: block; }
+
+  .hamburger-btn { display: flex; }
+
+  .main { min-height: 100vh; }
+
+  .topbar {
+    padding: 10px 14px;
+    gap: 8px;
+    flex-wrap: nowrap;
+  }
+  .topbar h1 { font-size: 15px; white-space: nowrap; }
+  .topbar .sub { display: none; }
+
+  /* Ocultar elementos secundarios de topbar en móvil */
+  .topbar-hide-mobile { display: none !important; }
+
+  .content { padding: 14px; }
+
+  /* Hero card */
+  .hero-grid { grid-template-columns: 1fr; }
+  .hero .big { font-size: 30px; }
+  .hero { padding: 16px; }
+
+  /* Grids de estadísticas: máximo 2 columnas */
+  .stat-grid { grid-template-columns: 1fr 1fr !important; }
+
+  /* Overview grid ignora la preferencia de columnas */
+  [data-cols="2"] .overview-grid,
+  [data-cols="3"] .overview-grid { grid-template-columns: 1fr !important; }
+
+  /* Tablas con scroll horizontal */
+  .card { overflow-x: auto; }
+  .table { min-width: 480px; }
+
+  /* Tabs con scroll horizontal */
+  .tabs { overflow-x: auto; flex-wrap: nowrap; padding: 0 10px; }
+  .tab { white-space: nowrap; padding: 10px 10px; }
+
+  /* Range pills */
+  .range { flex-wrap: wrap; }
+
+  /* Search ocupa todo */
+  .search { max-width: 100%; }
+}

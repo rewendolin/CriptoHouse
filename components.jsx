@@ -293,6 +293,7 @@ const Icon = ({ name, size = 16 }) => {
     rows:       <><rect x="3" y="4" width="18" height="4"/><rect x="3" y="11" width="18" height="4"/><rect x="3" y="18" width="18" height="2"/></>,
     chat:       <><path d="M21 12 a9 9 0 1 0 -4 7.5 L21 21 L20 16 A9 9 0 0 0 21 12 Z"/></>,
     sun:        <><circle cx="12" cy="12" r="4"/><path d="M12 2 V4 M12 20 V22 M2 12 H4 M20 12 H22 M5 5 L6.5 6.5 M17.5 17.5 L19 19 M5 19 L6.5 17.5 M17.5 6.5 L19 5"/></>,
+    menu:       <><path d="M3 6 H21 M3 12 H21 M3 18 H21"/></>,
   };
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
@@ -324,7 +325,7 @@ const Modal = ({ open, onClose, title, onSubmit, children }) => {
     }} onClick={onClose}>
       <div style={{
         background:"var(--bg-1)", border:"1px solid var(--border)",
-        borderRadius:12, padding:24, width:460, maxHeight:"90vh", overflowY:"auto",
+        borderRadius:12, padding:24, width:"min(460px, 92vw)", maxHeight:"90vh", overflowY:"auto",
         boxShadow:"0 12px 40px rgba(0,0,0,0.5)"
       }} onClick={e => e.stopPropagation()}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20 }}>

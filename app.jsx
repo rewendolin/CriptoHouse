@@ -168,6 +168,7 @@ function App() {
 function AppShell({ onLogout }) {
   const [tweaks, setTweak] = window.useTweaks(TWEAK_DEFAULTS);
   const [page, setPage] = useS("overview");
+  const [sidebarOpen, setSidebarOpen] = useS(false);
   const [updatedAgo, setUpdatedAgo] = useS(0);
   const t = window.useI18n(tweaks.lang);
   const live = window.useLivePrices();
@@ -239,10 +240,15 @@ function AppShell({ onLogout }) {
     }
   };
 
+  const goTo = (id) => { setPage(id); setSidebarOpen(false); };
+
   return (
     <div className="app">
+      {/* Backdrop móvil */}
+      <div className={"sidebar-backdrop" + (sidebarOpen ? " open" : "")} onClick={() => setSidebarOpen(false)}/>
+
       {/* SIDEBAR */}
-      <aside className="sidebar">
+      <aside className={"sidebar" + (sidebarOpen ? " open" : "")}>
         <div className="brand">
           <div className="brand-mark">CH</div>
           <div className="brand-name">cripto<span className="accent">house</span></div>
@@ -258,21 +264,21 @@ function AppShell({ onLogout }) {
 
         <nav style={{ display:"flex", flexDirection:"column", gap:0, flex:1, overflowY:"auto" }}>
           {navItems.map(n => (
-            <button key={n.id} className={"nav-item " + (page === n.id ? "active" : "")} onClick={() => setPage(n.id)}>
+            <button key={n.id} className={"nav-item " + (page === n.id ? "active" : "")} onClick={() => goTo(n.id)}>
               <span className="ico"><Icon name={n.icon} size={16}/></span>
               <span>{t("nav." + n.id)}</span>
             </button>
           ))}
           <div className="nav-section-label">DeFi</div>
           {navItems2.map(n => (
-            <button key={n.id} className={"nav-item " + (page === n.id ? "active" : "")} onClick={() => setPage(n.id)}>
+            <button key={n.id} className={"nav-item " + (page === n.id ? "active" : "")} onClick={() => goTo(n.id)}>
               <span className="ico"><Icon name={n.icon} size={16}/></span>
               <span>{t("nav." + n.id)}</span>
             </button>
           ))}
           <div className="nav-section-label">{t("accounts2")}</div>
           {navItems3.map(n => (
-            <button key={n.id} className={"nav-item " + (page === n.id ? "active" : "")} onClick={() => setPage(n.id)}>
+            <button key={n.id} className={"nav-item " + (page === n.id ? "active" : "")} onClick={() => goTo(n.id)}>
               <span className="ico"><Icon name={n.icon} size={16}/></span>
               <span>{t("nav." + n.id)}</span>
             </button>
@@ -292,6 +298,9 @@ function AppShell({ onLogout }) {
       {/* MAIN */}
       <main className="main">
         <header className="topbar">
+          <button className="hamburger-btn" onClick={() => setSidebarOpen(s => !s)} title="Menú">
+            <Icon name="menu" size={16}/>
+          </button>
           <h1>{t("nav." + page)}</h1>
           <span className="sub">· {t("pageDescriptions." + page)}</span>
           <div className="grow"/>
@@ -300,17 +309,17 @@ function AppShell({ onLogout }) {
             <button className="icon-btn" onClick={() => setTweak("privacy", !tweaks.privacy)} title={tweaks.privacy ? t("showBalances") : t("hideBalances")}>
               <Icon name={tweaks.privacy ? "eyeOff" : "eye"} size={14}/>
             </button>
-            <button className="icon-btn" title={t("notifications")}>
+            <button className="icon-btn topbar-hide-mobile" title={t("notifications")}>
               <Icon name="bell" size={14}/>
             </button>
 
-            <select className="lang-select" value={tweaks.lang} onChange={e => setTweak("lang", e.target.value)}>
+            <select className="lang-select topbar-hide-mobile" value={tweaks.lang} onChange={e => setTweak("lang", e.target.value)}>
               <option value="es">🇪🇸 ES</option>
               <option value="en">🇬🇧 EN</option>
               <option value="pt">🇧🇷 PT</option>
             </select>
 
-            <button className="btn"><Icon name="refresh" size={13}/>{t("refresh")}</button>
+            <button className="btn topbar-hide-mobile"><Icon name="refresh" size={13}/>{t("refresh")}</button>
             <div className="avatar">U</div>
           </div>
         </header>
