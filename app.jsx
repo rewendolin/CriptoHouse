@@ -43,13 +43,14 @@ function LoginScreen({ onLogin }) {
   const [pass2, setPass2] = useS('');
   const [show, setShow]   = useS(false);
   const [err, setErr]     = useS('');
+  const [reset, setReset] = useS(false);
 
   const submit = (e) => {
     if (e) e.preventDefault();
     if (!pass) return setErr('Introduce una contraseña');
-    if (!hasPass) {
-      if (pass.length < 4)    return setErr('Mínimo 4 caracteres');
-      if (pass !== pass2)     return setErr('Las contraseñas no coinciden');
+    if (!hasPass || reset) {
+      if (pass.length < 4)  return setErr('Mínimo 4 caracteres');
+      if (pass !== pass2)   return setErr('Las contraseñas no coinciden');
       localStorage.setItem(CH_PASS_KEY, simpleHash(pass));
     } else {
       if (simpleHash(pass) !== localStorage.getItem(CH_PASS_KEY)) {
@@ -59,25 +60,37 @@ function LoginScreen({ onLogin }) {
     onLogin();
   };
 
+  const doReset = () => {
+    localStorage.removeItem(CH_PASS_KEY);
+    setPass(''); setPass2(''); setErr(''); setReset(true);
+  };
+
   const sx = {
-    width:'100%', background:'var(--bg-2)', border:'1px solid var(--border)',
-    borderRadius:6, padding:'10px 12px', fontSize:14, color:'var(--fg-0)',
+    width:'100%', background:'var(--bg-2)', border:'1px solid var(--line)',
+    borderRadius:6, padding:'10px 12px', fontSize:16, color:'var(--fg-0)',
     fontFamily:'var(--font-sans)', boxSizing:'border-box', outline:'none',
   };
 
+  const isNew = !hasPass || reset;
+
   return (
-    <div style={{ minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', background:'var(--bg-0)', fontFamily:'var(--font-sans)' }}>
-      <div style={{ width:340, background:'var(--bg-1)', border:'1px solid var(--border)', borderRadius:16, padding:36, boxShadow:'0 24px 64px rgba(0,0,0,0.5)' }}>
+    <div style={{ minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', background:'var(--bg-0)', fontFamily:'var(--font-sans)', padding:'20px 16px' }}>
+      <div style={{ width:'min(360px, 100%)', background:'var(--bg-1)', border:'1px solid var(--line)', borderRadius:16, padding:'32px 28px', boxShadow:'0 24px 64px rgba(0,0,0,0.5)' }}>
         <div style={{ textAlign:'center', marginBottom:28 }}>
           <div style={{ fontSize:30, fontWeight:700, letterSpacing:'-0.02em', color:'var(--fg-0)' }}>
             cripto<span style={{ color:'var(--accent)' }}>house</span>
           </div>
           <div style={{ color:'var(--fg-3)', fontSize:13, marginTop:8 }}>
-            {hasPass ? 'Accede a tu portfolio privado' : 'Crea tu contraseña de acceso'}
+            {reset ? 'Crea una nueva contraseña' : isNew ? 'Crea tu contraseña de acceso' : 'Accede a tu portfolio privado'}
           </div>
+          {reset && (
+            <div style={{ marginTop:8, fontSize:12, color:'var(--pos)', background:'rgba(146,227,106,0.08)', borderRadius:6, padding:'6px 10px' }}>
+              Tus datos están intactos. Solo estás cambiando la contraseña.
+            </div>
+          )}
         </div>
 
-        <form onSubmit={submit}>
+        <form onSubmit={submit} autoComplete="on">
           <div style={{ marginBottom:14 }}>
             <label style={{ display:'block', fontSize:11, color:'var(--fg-3)', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:6 }}>Contraseña</label>
             <div style={{ position:'relative' }}>
@@ -87,6 +100,7 @@ function LoginScreen({ onLogin }) {
                 onChange={e => { setPass(e.target.value); setErr(''); }}
                 placeholder="••••••••"
                 autoFocus
+                autoComplete={isNew ? 'new-password' : 'current-password'}
                 style={{ ...sx, paddingRight:40 }}
               />
               <button type="button" onClick={() => setShow(s => !s)}
@@ -96,7 +110,7 @@ function LoginScreen({ onLogin }) {
             </div>
           </div>
 
-          {!hasPass && (
+          {isNew && (
             <div style={{ marginBottom:14 }}>
               <label style={{ display:'block', fontSize:11, color:'var(--fg-3)', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:6 }}>Confirmar contraseña</label>
               <input
@@ -104,6 +118,7 @@ function LoginScreen({ onLogin }) {
                 value={pass2}
                 onChange={e => { setPass2(e.target.value); setErr(''); }}
                 placeholder="••••••••"
+                autoComplete="new-password"
                 style={sx}
               />
             </div>
@@ -112,14 +127,23 @@ function LoginScreen({ onLogin }) {
           {err && <div style={{ color:'var(--neg)', fontSize:12, marginBottom:12 }}>{err}</div>}
 
           <button type="submit" className="btn btn-primary"
-            style={{ width:'100%', justifyContent:'center', padding:'10px 0', fontSize:14, marginTop:4 }}>
-            {hasPass ? 'Entrar' : 'Crear contraseña'}
+            style={{ width:'100%', justifyContent:'center', padding:'12px 0', fontSize:15, marginTop:4 }}>
+            {isNew ? 'Crear contraseña' : 'Entrar'}
           </button>
         </form>
 
-        {!hasPass && (
+        {!isNew && (
+          <div style={{ marginTop:16, textAlign:'center' }}>
+            <button onClick={doReset}
+              style={{ background:'none', border:'none', color:'var(--fg-3)', fontSize:12, cursor:'pointer', textDecoration:'underline', textUnderlineOffset:3 }}>
+              ¿Olvidaste la contraseña?
+            </button>
+          </div>
+        )}
+
+        {isNew && (
           <div style={{ marginTop:16, fontSize:11, color:'var(--fg-3)', textAlign:'center', lineHeight:1.5 }}>
-            La contraseña se almacena localmente en tu navegador.<br/>No se envía ningún dato a servidores externos.
+            La contraseña se guarda solo en este dispositivo.<br/>No se envía ningún dato a servidores externos.
           </div>
         )}
       </div>
