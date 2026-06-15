@@ -91,10 +91,13 @@ function LoginScreen({ onLogin }) {
         </div>
 
         <form onSubmit={submit} autoComplete="on">
+          {/* Campo usuario oculto: necesario para que Safari/Chrome ofrezcan guardar la contraseña */}
+          <input type="text" name="username" autoComplete="username" value="criptohouse" readOnly style={{ display:'none' }}/>
           <div style={{ marginBottom:14 }}>
             <label style={{ display:'block', fontSize:11, color:'var(--fg-3)', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:6 }}>Contraseña</label>
             <div style={{ position:'relative' }}>
               <input
+                name="password"
                 type={show ? 'text' : 'password'}
                 value={pass}
                 onChange={e => { setPass(e.target.value); setErr(''); }}
@@ -114,6 +117,7 @@ function LoginScreen({ onLogin }) {
             <div style={{ marginBottom:14 }}>
               <label style={{ display:'block', fontSize:11, color:'var(--fg-3)', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:6 }}>Confirmar contraseña</label>
               <input
+                name="password-confirm"
                 type={show ? 'text' : 'password'}
                 value={pass2}
                 onChange={e => { setPass2(e.target.value); setErr(''); }}
