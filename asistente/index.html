@@ -1,0 +1,580 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mi Cartera Cripto</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Mi Cartera">
+<meta name="theme-color" content="#f4f6f8">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icono.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Layout: una columna estrecha de móvil — resumen → pregunta → ranking → tarjetas; detalle en hoja que sube desde abajo */
+:root{
+  --papel:#f4f6f8; --carta:#ffffff; --tinta:#111821; --gris:#5d6876; --gris2:#98a2ae; --linea:#e3e7ec;
+  --acento:#0f5c66; --acento-suave:#e2f0f1;
+  --gana:#178a4c; --gana-suave:#e3f4ea; --pierde:#cc3f2c; --pierde-suave:#fbe7e3; --aviso:#b77c00; --aviso-suave:#fdf2d9;
+  --btc:#f2a33a; --eth:#6273e8; --usdc:#2e78d2;
+  --f-titulo:"Space Grotesk","Helvetica Neue",Arial,sans-serif;
+  --f-texto:"Inter",-apple-system,"Helvetica Neue",Arial,sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--papel);color:var(--tinta)}
+body{font:15px/1.45 var(--f-texto);-webkit-font-smoothing:antialiased;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:calc(env(safe-area-inset-bottom,0px) + 32px)}
+.app{max-width:520px;margin:0 auto;display:flex;flex-direction:column;gap:18px;padding-top:14px;min-width:0;width:100%}
+.app>*{min-width:0}
+main .app{padding-top:0}
+html,body{overflow-x:hidden}
+h1,h2,h3{font-family:var(--f-titulo);margin:0;text-wrap:balance;letter-spacing:-.01em}
+h2{font-size:15px;font-weight:600;color:var(--gris);text-transform:uppercase;letter-spacing:.06em}
+.num{font-variant-numeric:tabular-nums}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,summary:focus-visible,.tarjeta:focus-visible{outline:2px solid var(--acento);outline-offset:2px}
+[hidden]{display:none!important}
+
+/* Candado */
+.candado{min-height:80vh;display:flex;flex-direction:column;justify-content:center;gap:14px;max-width:360px;margin:0 auto}
+.candado .logo{font-size:44px}
+.candado input[type=password]{width:100%;padding:14px;border-radius:12px;border:1px solid var(--linea);font-size:17px;background:var(--carta)}
+.candado label{display:flex;gap:8px;align-items:center;color:var(--gris);font-size:14px}
+.btn{background:var(--acento);color:#fff;border:0;border-radius:12px;padding:14px;font-weight:600;font-size:16px}
+.error{color:var(--pierde);font-size:14px;min-height:20px}
+
+/* Cabecera */
+.cab{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.cab h1{font-size:22px}
+.precios{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;min-width:0}
+.chip{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap;background:var(--linea);color:var(--gris)}
+.chip.gana{background:var(--gana-suave);color:var(--gana)} .chip.pierde{background:var(--pierde-suave);color:var(--pierde)}
+.chip.aviso{background:var(--aviso-suave);color:var(--aviso)} .chip.acento{background:var(--acento-suave);color:var(--acento)}
+.punto{width:7px;height:7px;border-radius:50%;background:currentColor}
+
+/* Resumen */
+.resumen{background:var(--tinta);color:#fff;border-radius:20px;padding:20px;display:flex;flex-direction:column;gap:14px}
+.resumen .etq{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:#a9b4c0}
+.resumen .grande{font-family:var(--f-titulo);font-size:38px;font-weight:700;line-height:1}
+.resumen .fila{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.resumen .fila b{display:block;font-family:var(--f-titulo);font-size:17px}
+.resumen .verde{color:#6ee29d} .resumen .rojo{color:#ff8f7d}
+.reparto{display:flex;height:10px;border-radius:6px;overflow:hidden;gap:2px}
+.leyenda{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;color:#c7d0da}
+.leyenda i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:5px}
+
+/* Pregunta */
+.pregunta{background:var(--carta);border:1px solid var(--linea);border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:10px}
+.pregunta form{display:flex;gap:8px}
+.pregunta input{flex:1;min-width:0;border:1px solid var(--linea);border-radius:10px;padding:11px 12px;font-size:16px;background:var(--papel)}
+.pregunta form button{border:0;background:var(--acento);color:#fff;border-radius:10px;padding:0 14px;font-weight:600}
+.sugerencias{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.sugerencias button{border:1px solid var(--linea);background:var(--papel);border-radius:999px;padding:6px 11px;font-size:13px;white-space:nowrap}
+.respuesta{background:var(--acento-suave);border-radius:12px;padding:12px;font-size:14px}
+.respuesta p{margin:0 0 6px} .respuesta p:last-child{margin:0}
+.respuesta ul{margin:4px 0 0;padding-left:18px}
+
+/* Ranking */
+.bloque{display:flex;flex-direction:column;gap:10px}
+.cab-bloque{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.ranking{background:var(--carta);border:1px solid var(--linea);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:12px}
+.rk{display:grid;grid-template-columns:110px minmax(0,1fr) 62px;gap:10px;align-items:center;font-size:13px}
+.rk .nom{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rk .nom small{display:block;font-weight:400;color:var(--gris2)}
+.rk .barra{height:12px;background:var(--papel);border-radius:6px;overflow:hidden}
+.rk .barra span{display:block;height:100%;border-radius:6px;background:var(--acento)}
+.rk .val{text-align:right;font-weight:600}
+.conmutar{display:flex;background:var(--linea);border-radius:10px;padding:3px}
+.conmutar button{border:0;background:none;padding:5px 10px;border-radius:8px;font-size:12px;font-weight:600;color:var(--gris)}
+.conmutar button[aria-pressed=true]{background:var(--carta);color:var(--tinta);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+
+/* Tipos */
+.tipos{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none}
+.tipos button{border:1px solid var(--linea);background:var(--carta);border-radius:12px;padding:8px 12px;font-size:14px;font-weight:600;white-space:nowrap;display:flex;gap:6px;align-items:center}
+.tipos button[aria-pressed=true]{background:var(--tinta);color:#fff;border-color:var(--tinta)}
+.tipos .n{font-size:12px;opacity:.7}
+.acciones{display:flex;gap:6px}
+.acciones button{border:0;background:none;color:var(--acento);font-size:13px;font-weight:600;padding:4px}
+
+/* Tarjetas */
+.lista{display:flex;flex-direction:column;gap:10px}
+.tarjeta{background:var(--carta);border:1px solid var(--linea);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:10px;text-align:left;width:100%}
+.tarjeta.cerrada{background:transparent;border-style:dashed}
+.t-cab{display:flex;align-items:center;gap:10px}
+.monedas{display:flex;flex:none}
+.moneda{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:700;color:#fff;border:2px solid var(--carta);font-family:var(--f-titulo)}
+.moneda + .moneda{margin-left:-10px}
+.t-nom{flex:1;min-width:0}
+.t-nom b{font-family:var(--f-titulo);font-size:16px;display:block}
+.t-nom small{color:var(--gris);font-size:12px}
+.t-num{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.t-num div{display:flex;flex-direction:column}
+.t-num span{font-size:11px;color:var(--gris2);text-transform:uppercase;letter-spacing:.05em}
+.t-num b{font-family:var(--f-titulo);font-size:16px;font-weight:600}
+.gana-t{color:var(--gana)} .pierde-t{color:var(--pierde)} .gris-t{color:var(--gris2)}
+
+/* Barra de rango */
+.rango{position:relative;height:34px;overflow:hidden;margin:0 14px}
+.rango .pista{position:absolute;left:0;right:0;top:12px;height:8px;border-radius:4px;background:var(--papel);border:1px solid var(--linea)}
+.rango .zona{position:absolute;top:12px;height:8px;border-radius:4px;background:var(--acento);opacity:.85}
+.rango .zona.fuera{background:var(--gris2)}
+.rango .marca{position:absolute;top:4px;width:2px;height:24px;background:var(--tinta);border-radius:1px}
+.rango .marca::after{content:"";position:absolute;top:-4px;left:-4px;width:10px;height:10px;border-radius:50%;background:var(--tinta)}
+.rango .lim{position:absolute;top:22px;font-size:10px;color:var(--gris);white-space:nowrap}
+
+.vacio{background:var(--carta);border:1px dashed var(--linea);border-radius:16px;padding:22px;text-align:center;color:var(--gris);display:flex;flex-direction:column;gap:6px;align-items:center}
+.vacio .e{font-size:30px}
+
+/* Hoja de detalle */
+.velo{position:fixed;inset:0;background:rgba(17,24,33,.45);z-index:20;display:flex;align-items:flex-end;justify-content:center}
+.hoja{background:var(--papel);width:100%;max-width:560px;max-height:92vh;overflow-y:auto;border-radius:22px 22px 0 0;
+  padding:10px max(16px,env(safe-area-inset-left,0px)) calc(env(safe-area-inset-bottom,0px) + 24px) max(16px,env(safe-area-inset-right,0px));
+  display:flex;flex-direction:column;gap:14px;animation:sube .22s ease-out}
+@keyframes sube{from{transform:translateY(40px);opacity:.6}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.hoja{animation:none}}
+.asa{width:40px;height:5px;border-radius:3px;background:var(--linea);margin:0 auto}
+.h-cab{display:flex;align-items:center;gap:10px}
+.h-cab h3{font-size:20px;flex:1}
+.cerrar{border:0;background:var(--linea);width:34px;height:34px;border-radius:50%;font-size:18px}
+.caja{background:var(--carta);border:1px solid var(--linea);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.pnl{display:grid;grid-template-columns:1fr auto;align-items:end;gap:6px}
+.pnl .grande{font-family:var(--f-titulo);font-size:32px;font-weight:700;line-height:1}
+.flujo{display:flex;align-items:center;gap:6px;font-size:13px;flex-wrap:wrap}
+.flujo .paso{background:var(--papel);border-radius:10px;padding:6px 9px;display:flex;flex-direction:column}
+.flujo .paso small{color:var(--gris2);font-size:11px}
+.flujo .flecha{color:var(--gris2)}
+.linea-t{position:relative;height:46px}
+.linea-t .l{position:absolute;left:8px;right:8px;top:9px;height:3px;background:var(--linea)}
+.linea-t .l span{display:block;height:100%;background:var(--acento)}
+.linea-t .p{position:absolute;top:3px;width:15px;height:15px;border-radius:50%;background:var(--acento);border:3px solid var(--carta);box-shadow:0 0 0 1px var(--acento)}
+.linea-t .p.fin{right:0} .linea-t .p.ini{left:0}
+.linea-t .p.hoy{background:var(--carta)}
+.linea-t .txt{position:absolute;top:24px;font-size:12px;color:var(--gris)}
+.linea-t .txt.der{right:0;text-align:right}
+.linea-t .dias{position:absolute;left:50%;transform:translateX(-50%);top:-4px;font-size:11px;font-weight:600;background:var(--carta);padding:0 6px;color:var(--acento)}
+details{background:var(--carta);border:1px solid var(--linea);border-radius:14px}
+summary{padding:12px 14px;font-weight:600;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"＋";color:var(--gris2)} details[open] summary::after{content:"－"}
+.dl{padding:0 14px 12px;display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:14px}
+.dl dt{color:var(--gris)} .dl dd{margin:0;text-align:right;font-weight:500}
+.nota{padding:0 14px 12px;font-size:13px;color:var(--gris)}
+a.enlace{color:var(--acento);font-weight:600;text-decoration:none}
+.pie{text-align:center;font-size:12px;color:var(--gris2)}
+@media (max-width:380px){.rk{grid-template-columns:86px 1fr 56px}.resumen .grande{font-size:32px}}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- 🔒 Candado -->
+  <form class="candado" id="candado" autocomplete="on">
+    <div class="logo">🔐</div>
+    <h1>Mi Cartera Cripto</h1>
+    <input type="text" name="username" id="usuario" value="glenda" autocomplete="username" hidden>
+    <input type="password" id="clave" name="password" autocomplete="current-password" placeholder="Contraseña" required>
+    <label><input type="checkbox" id="recordar" checked> Recordar en este móvil</label>
+    <button class="btn" type="submit">Entrar</button>
+    <div class="error" id="error"></div>
+  </form>
+
+  <main id="principal" hidden>
+    <div class="app">
+      <header class="cab">
+        <h1>Mi Cartera</h1>
+        <div class="precios" id="precios"></div>
+      </header>
+
+      <section class="resumen" id="resumen" aria-label="Resumen total"></section>
+
+      <section class="pregunta" aria-label="Pregúntame">
+        <form id="f-pregunta">
+          <input id="q" type="text" placeholder="Pregúntame… ¿cuál rinde más?" autocomplete="off" enterkeyhint="send">
+          <button type="submit">Preguntar</button>
+        </form>
+        <div class="sugerencias" id="sugerencias"></div>
+        <div class="respuesta" id="respuesta" hidden></div>
+      </section>
+
+      <section class="bloque">
+        <div class="cab-bloque">
+          <h2>🏆 ¿Cuál rinde más?</h2>
+          <div class="conmutar" role="group" aria-label="Medida">
+            <button id="m-apr" aria-pressed="true">APR</button>
+            <button id="m-tarifas" aria-pressed="false">Tarifas</button>
+            <button id="m-pnl" aria-pressed="false">Ganancia</button>
+          </div>
+        </div>
+        <div class="ranking" id="ranking"></div>
+      </section>
+
+      <section class="bloque">
+        <div class="cab-bloque">
+          <h2>📂 Posiciones</h2>
+          <div class="acciones">
+            <button id="ampliar">Ampliar todo</button>
+            <button id="resumir">Resumir todo</button>
+          </div>
+        </div>
+        <div class="tipos" id="tipos"></div>
+        <div class="lista" id="lista"></div>
+      </section>
+
+      <p class="pie" id="pie"></p>
+    </div>
+  </main>
+</div>
+
+<div class="velo" id="velo" hidden><div class="hoja" id="hoja" role="dialog" aria-modal="true"></div></div>
+
+<script>
+'use strict';
+const $ = (s) => document.querySelector(s);
+const eur = (n, d = 2) => n == null || isNaN(n) ? '—' : new Intl.NumberFormat('es-ES', { minimumFractionDigits: d, maximumFractionDigits: d }).format(n);
+const usd = (n, d = 2) => n == null || isNaN(n) ? '—' : eur(n, d) + ' US$';
+const signo = (n) => n > 0 ? '+' : n < 0 ? '−' : '';
+const usdS = (n) => n == null ? '—' : signo(n) + usd(Math.abs(n));
+const pct = (n) => n == null || !isFinite(n) ? '—' : signo(n) + eur(Math.abs(n), 2) + ' %';
+const fecha = (s) => s ? new Date(s).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+const fechaHora = (s) => s ? new Date(s).toLocaleString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—';
+const dias = (a, b) => Math.max(0, Math.round((new Date(b || Date.now()) - new Date(a)) / 864e5));
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const guardar = (k, v) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (e) {} };
+const leer = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+
+const COLOR = { WBTC: 'var(--btc)', BTC: 'var(--btc)', WETH: 'var(--eth)', ETH: 'var(--eth)', USDC: 'var(--usdc)' };
+const COINGECKO = { WBTC: 'bitcoin', BTC: 'bitcoin', WETH: 'ethereum', ETH: 'ethereum' };
+const TIPOS = [
+  { id: 'liquidez', e: '💧', n: 'Liquidez concentrada' },
+  { id: 'compra', e: '🪙', n: 'Compras' },
+  { id: 'staking', e: '🔒', n: 'Staking' },
+  { id: 'prestamo', e: '🏦', n: 'Préstamos' },
+];
+
+let D = null, P = [], precios = {}, preciosVivos = false, tipoActivo = 'liquidez', medida = 'apr';
+
+/* ── 🔐 Abrir el candado ───────────────────────── */
+async function descifrar(clave) {
+  const r = await fetch('datos.enc.json', { cache: 'no-store' });
+  if (!r.ok) throw new Error('No encuentro los datos');
+  const c = await r.json();
+  const b = (s) => Uint8Array.from(atob(s), (ch) => ch.charCodeAt(0));
+  const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(clave), 'PBKDF2', false, ['deriveKey']);
+  const llave = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt: b(c.sal), iterations: c.iter, hash: 'SHA-256' },
+    base, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+  const plano = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b(c.iv) }, llave, b(c.datos));
+  return JSON.parse(new TextDecoder().decode(plano));
+}
+async function entrar(clave, recordar) {
+  $('#error').textContent = 'Abriendo…';
+  try {
+    D = await descifrar(clave);
+    if (recordar) guardar('ch_asist_clave', clave);
+    $('#candado').hidden = true; $('#principal').hidden = false;
+    arrancar();
+  } catch (e) {
+    guardar('ch_asist_clave', null);
+    $('#error').textContent = e.name === 'OperationError' ? 'Contraseña incorrecta' : 'No se pudieron cargar los datos';
+  }
+}
+$('#candado').addEventListener('submit', (e) => { e.preventDefault(); entrar($('#clave').value, $('#recordar').checked); });
+const recordada = leer('ch_asist_clave');
+if (recordada) entrar(recordada, true);
+
+/* ── 📐 Matemática de liquidez concentrada ────────
+   x = token volátil (WBTC/WETH), y = USDC, precio P en USDC */
+function cantidades(L, P, pa, pb) {
+  const s = Math.sqrt(P), a = Math.sqrt(pa), b = Math.sqrt(pb);
+  if (P <= pa) return { x: L * (1 / a - 1 / b), y: 0 };
+  if (P >= pb) return { x: 0, y: L * (b - a) };
+  return { x: L * (1 / s - 1 / b), y: L * (s - a) };
+}
+function precioPorReparto(parte, pa, pb) {
+  if (parte >= 0.9999) return pa; if (parte <= 0.0001) return pb;
+  let lo = pa, hi = pb;
+  for (let i = 0; i < 80; i++) {
+    const m = (lo + hi) / 2, q = cantidades(1, m, pa, pb), sh = q.x * m / (q.x * m + q.y);
+    sh > parte ? (lo = m) : (hi = m);
+  }
+  return (lo + hi) / 2;
+}
+function preparar(p) {
+  const o = { ...p, t0: p.par[0], t1: p.par[1] };
+  if (p.tipo === 'liquidez' && p.rango) {
+    const [pa, pb] = p.rango;
+    o.precioFoto = p.foto.precio || precioPorReparto(p.foto.partToken0, pa, pb);
+    const q1 = cantidades(1, o.precioFoto, pa, pb);
+    o.L = p.foto.valor / (q1.x * o.precioFoto + q1.y);
+  }
+  return o;
+}
+function calcular(o) {
+  const tarifas = o.foto?.tarifas || 0;
+  if (o.estado === 'cerrada') {
+    const final = o.retirado?.valorUSD ?? o.foto.valor;
+    const pnl = o.depositado != null ? final - o.depositado : null;
+    return { ...o, valor: final, tarifas, precio: null, dentro: null, pnl, pnlPct: pnl != null ? pnl / o.depositado * 100 : null, cant: null };
+  }
+  const P = precios[o.t0] ?? o.precioFoto;
+  const c = cantidades(o.L, P, o.rango[0], o.rango[1]);
+  const valor = c.x * P + c.y;
+  const pnl = o.depositado != null ? valor + tarifas - o.depositado : null;
+  return { ...o, valor, tarifas, precio: P, cant: c, dentro: P > o.rango[0] && P < o.rango[1],
+    parte0: (c.x * P) / valor, pnl, pnlPct: pnl != null ? pnl / o.depositado * 100 : null };
+}
+
+/* ── 📡 Precios en vivo (si falla, uso la foto) ── */
+async function cargarPrecios() {
+  const ids = [...new Set(D.posiciones.map((p) => COINGECKO[p.par[0]]).filter(Boolean))];
+  try {
+    const r = await fetch('https://api.coingecko.com/api/v3/simple/price?vs_currencies=usd&ids=' + ids.join(','));
+    if (!r.ok) throw 0;
+    const j = await r.json();
+    for (const [sim, id] of Object.entries(COINGECKO)) if (j[id]?.usd) precios[sim] = j[id].usd;
+    preciosVivos = true;
+  } catch (e) { preciosVivos = false; }
+  pintar();
+}
+
+function arrancar() {
+  P = D.posiciones.map(preparar);
+  pintar();
+  cargarPrecios();
+  setInterval(cargarPrecios, 60000);
+}
+const posiciones = () => P.map(calcular);
+
+/* ── 🎨 Pintar ─────────────────────────────────── */
+function monedas(par) {
+  return '<div class="monedas">' + par.map((t) => `<span class="moneda" style="background:${COLOR[t] || 'var(--gris)'}">${esc(t.replace('W', '').slice(0, 3))}</span>`).join('') + '</div>';
+}
+function chipEstado(p) {
+  if (p.estado === 'cerrada') return '<span class="chip"><span class="punto"></span>Cerrada</span>';
+  return p.dentro ? '<span class="chip gana"><span class="punto"></span>Dentro de rango</span>'
+                  : '<span class="chip pierde"><span class="punto"></span>Fuera de rango</span>';
+}
+function barraRango(p) {
+  const [pa, pb] = p.rango, P = p.precio;
+  const ancho = pb - pa, min = Math.min(pa, P ?? pa) - ancho * 0.15, max = Math.max(pb, P ?? pb) + ancho * 0.15;
+  const x = (v) => ((v - min) / (max - min)) * 100;
+  return `<div class="rango" aria-label="Rango ${eur(pa)} a ${eur(pb)}">
+    <div class="pista"></div>
+    <div class="zona ${p.estado === 'cerrada' || !p.dentro ? 'fuera' : ''}" style="left:${x(pa)}%;width:${x(pb) - x(pa)}%"></div>
+    ${P != null ? `<div class="marca" style="left:calc(${x(P)}% - 1px)" title="Precio ahora"></div>` : ''}
+    <span class="lim num" style="left:${x(pa)}%;transform:translateX(-50%)">${eur(pa, 0)}</span>
+    <span class="lim num" style="left:${x(pb)}%;transform:translateX(-50%)">${eur(pb, 0)}</span>
+  </div>`;
+}
+
+function pintar() {
+  const ps = posiciones();
+  const abiertas = ps.filter((p) => p.estado !== 'cerrada');
+
+  // Precios arriba
+  const vistos = [...new Set(abiertas.map((p) => p.t0))];
+  $('#precios').innerHTML = vistos.map((t) => `<span class="chip ${preciosVivos ? 'acento' : ''}">${esc(t.replace('W', ''))} ${eur(precios[t] ?? P.find((x) => x.t0 === t).precioFoto, 0)}</span>`).join('')
+    + `<span class="chip ${preciosVivos ? 'gana' : 'aviso'}">${preciosVivos ? '● en vivo' : 'precio de la foto'}</span>`;
+
+  // Resumen
+  const valor = abiertas.reduce((s, p) => s + p.valor, 0);
+  const tarifas = abiertas.reduce((s, p) => s + p.tarifas, 0);
+  const conDep = ps.filter((p) => p.pnl != null);
+  const pnl = conDep.reduce((s, p) => s + p.pnl, 0);
+  const dep = conDep.reduce((s, p) => s + p.depositado, 0);
+  const faltan = ps.filter((p) => p.depositado == null).length;
+  const colores = ['var(--btc)', 'var(--eth)', 'var(--usdc)', '#7fc8c0'];
+  $('#resumen').innerHTML = `
+    <div><div class="etq">Valor ahora (posiciones abiertas)</div><div class="grande num">${usd(valor)}</div></div>
+    <div class="fila">
+      <div><span class="etq">Ganancia</span><b class="num ${pnl >= 0 ? 'verde' : 'rojo'}">${usdS(pnl)}</b></div>
+      <div><span class="etq">Rentab.</span><b class="num ${pnl >= 0 ? 'verde' : 'rojo'}">${dep ? pct(pnl / dep * 100) : '—'}</b></div>
+      <div><span class="etq">Tarifas</span><b class="num verde">+${usd(tarifas)}</b></div>
+    </div>
+    <div class="reparto">${abiertas.map((p, i) => `<span style="flex:${p.valor};background:${COLOR[p.t0] === 'var(--btc)' ? (i % 2 ? '#f7c57c' : 'var(--btc)') : 'var(--eth)'}"></span>`).join('')}</div>
+    <div class="leyenda">${abiertas.map((p, i) => `<span><i style="background:${COLOR[p.t0] === 'var(--btc)' ? (i % 2 ? '#f7c57c' : 'var(--btc)') : 'var(--eth)'}"></i>${p.par.join('/')} ${eur(p.valor / valor * 100, 0)} %</span>`).join('')}</div>
+    ${faltan ? `<span class="chip aviso" style="align-self:flex-start">⚠️ ${faltan} sin depósito inicial (no entran en la ganancia)</span>` : ''}`;
+
+  pintarRanking(ps);
+  pintarTipos(ps);
+  pintarLista(ps);
+  $('#pie').textContent = 'Datos de Uniswap del ' + fechaHora(D.actualizado) + (preciosVivos ? ' · valor recalculado con el precio de ahora' : '');
+}
+
+function nombreCorto(p) { return `${p.par.join('/')}<small>${p.protocolo.replace('Uniswap ', '')} · ${p.estado === 'cerrada' ? 'cerrada' : fecha(p.abierta)}</small>`; }
+
+function pintarRanking(ps) {
+  const val = (p) => medida === 'apr' ? p.foto.apr : medida === 'tarifas' ? p.tarifas : p.pnlPct;
+  const lista = ps.filter((p) => val(p) != null).sort((a, b) => val(b) - val(a));
+  const max = Math.max(...lista.map((p) => Math.abs(val(p))), 0.0001);
+  const fmt = (p) => medida === 'apr' ? eur(val(p), 1) + ' %' : medida === 'tarifas' ? eur(val(p), 0) + ' $' : pct(val(p));
+  const sin = ps.length - lista.length;
+  $('#ranking').innerHTML = lista.map((p) => `
+    <button class="rk" style="border:0;background:none;padding:0;text-align:left" data-id="${p.id}">
+      <span class="nom">${nombreCorto(p)}</span>
+      <span class="barra"><span style="width:${Math.abs(val(p)) / max * 100}%;background:${val(p) < 0 ? 'var(--pierde)' : p.estado === 'cerrada' ? 'var(--gris2)' : 'var(--acento)'}"></span></span>
+      <span class="val num">${fmt(p)}</span>
+    </button>`).join('')
+    + (sin ? `<span class="chip aviso" style="align-self:flex-start">${sin} sin datos para esta medida</span>` : '');
+}
+['apr', 'tarifas', 'pnl'].forEach((m) => $('#m-' + m).addEventListener('click', () => {
+  medida = m; ['apr', 'tarifas', 'pnl'].forEach((k) => $('#m-' + k).setAttribute('aria-pressed', k === m)); pintar();
+}));
+
+function pintarTipos(ps) {
+  $('#tipos').innerHTML = TIPOS.map((t) => {
+    const n = t.id === 'compra' ? (D.compras || []).length : ps.filter((p) => p.tipo === t.id).length;
+    return `<button data-tipo="${t.id}" aria-pressed="${t.id === tipoActivo}">${t.e} ${t.n} <span class="n">${n}</span></button>`;
+  }).join('');
+}
+$('#tipos').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) { tipoActivo = b.dataset.tipo; pintar(); } });
+
+function pintarLista(ps) {
+  const t = TIPOS.find((x) => x.id === tipoActivo);
+  if (tipoActivo === 'compra') {
+    const c = D.compras || [];
+    $('#lista').innerHTML = c.length ? c.map((x) => `<div class="tarjeta"><div class="t-cab">${monedas([x.token])}<div class="t-nom"><b>${esc(x.token)} · ${eur(x.cantidad, 6)}</b><small>${fecha(x.fecha)} · a ${usd(x.precio)}</small></div></div></div>`).join('')
+      : vacio('🪙', 'Compras sin apuntar', 'Mándame la captura de la compra (exchange o wallet) y la añado con fecha y precio.');
+    return;
+  }
+  const lista = ps.filter((p) => p.tipo === tipoActivo).sort((a, b) => (a.estado === 'cerrada') - (b.estado === 'cerrada') || b.valor - a.valor);
+  if (!lista.length) { $('#lista').innerHTML = vacio(t.e, t.n + ' (vacío)', 'Cuando tengas una, mándame la captura y aparece aquí.'); return; }
+  $('#lista').innerHTML = lista.map((p) => `
+    <button class="tarjeta ${p.estado === 'cerrada' ? 'cerrada' : ''}" data-id="${p.id}" aria-label="Ver ${p.par.join('/')}">
+      <div class="t-cab">${monedas(p.par)}
+        <div class="t-nom"><b>${p.par.join(' / ')}</b><small>${esc(p.protocolo)} · ${esc(p.comision)} · ${esc(p.red)}</small></div>
+        ${chipEstado(p)}
+      </div>
+      ${barraRango(p)}
+      <div class="t-num">
+        <div><span>${p.estado === 'cerrada' ? 'Retirado' : 'Valor'}</span><b class="num">${usd(p.valor, 0)}</b></div>
+        <div><span>Tarifas</span><b class="num gana-t">+${usd(p.tarifas, 0)}</b></div>
+        <div><span>Ganancia</span><b class="num ${p.pnl == null ? 'gris-t' : p.pnl >= 0 ? 'gana-t' : 'pierde-t'}">${p.pnl == null ? '? falta dato' : pct(p.pnlPct)}</b></div>
+      </div>
+    </button>
+    <details data-id="${p.id}"><summary>📋 Datos de ${p.par.join('/')} ${p.protocolo.replace('Uniswap ', '')}</summary>${tablaDatos(p)}</details>`).join('');
+}
+const vacio = (e, t, s) => `<div class="vacio"><span class="e">${e}</span><b>${t}</b><span>${s}</span></div>`;
+
+function tablaDatos(p) {
+  const filas = [
+    ['Abierta', fechaHora(p.abierta)],
+    ['Cerrada', p.cerrada ? fechaHora(p.cerrada) : 'sigue abierta'],
+    ['Días', dias(p.abierta, p.cerrada)],
+    ['Rango', `${eur(p.rango[0])} → ${eur(p.rango[1])} USDC`],
+    ['Depositado', p.depositado != null ? usd(p.depositado) : '? (dímelo)'],
+    [p.estado === 'cerrada' ? 'Retirado' : 'Valor ahora', usd(p.valor)],
+    ['Tarifas', usd(p.tarifas)],
+    ['APR (Uniswap)', eur(p.foto.apr) + ' %'],
+  ];
+  if (p.cant) filas.push(['Tienes dentro', `${eur(p.cant.x, p.t0.includes('BTC') ? 5 : 4)} ${p.t0} + ${eur(p.cant.y)} ${p.t1}`]);
+  if (p.retirado) filas.push(['Te llevaste', `${eur(p.retirado.token0, 4)} ${p.t0} + ${eur(p.retirado.token1)} ${p.t1}`]);
+  return `<dl class="dl num">${filas.map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join('')}</dl>`;
+}
+
+$('#ampliar').addEventListener('click', () => document.querySelectorAll('#lista details').forEach((d) => d.open = true));
+$('#resumir').addEventListener('click', () => document.querySelectorAll('#lista details').forEach((d) => d.open = false));
+
+/* ── 📄 Detalle de una posición ───────────────── */
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-id]');
+  if (b) abrir(b.dataset.id);
+});
+function abrir(id) {
+  const p = posiciones().find((x) => x.id === id); if (!p) return;
+  const d = dias(p.abierta, p.cerrada);
+  const ganaColor = p.pnl == null ? 'gris-t' : p.pnl >= 0 ? 'gana-t' : 'pierde-t';
+  $('#hoja').innerHTML = `
+    <div class="asa"></div>
+    <div class="h-cab">${monedas(p.par)}<h3>${p.par.join(' / ')}</h3><button class="cerrar" id="cerrar" aria-label="Cerrar">✕</button></div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">${chipEstado(p)}<span class="chip">💧 Liquidez concentrada</span><span class="chip">${esc(p.protocolo)} · ${esc(p.comision)}</span></div>
+
+    <div class="caja">
+      <div class="pnl">
+        <div><span class="chip" style="margin-bottom:6px">${p.estado === 'cerrada' ? 'Resultado final' : 'Resultado hoy'}</span>
+          <div class="grande num ${ganaColor}">${p.pnl == null ? '¿?' : usdS(p.pnl)}</div></div>
+        <b class="num ${ganaColor}" style="font-size:20px">${p.pnl == null ? '' : pct(p.pnlPct)}</b>
+      </div>
+      <div class="flujo num">
+        <div class="paso"><small>Pusiste</small>${p.depositado != null ? usd(p.depositado, 0) : '?'}</div><span class="flecha">→</span>
+        <div class="paso"><small>${p.estado === 'cerrada' ? 'Sacaste' : 'Vale'}</small>${usd(p.valor, 0)}</div>
+        ${p.estado === 'cerrada' ? '' : `<span class="flecha">+</span><div class="paso"><small>Tarifas</small>${usd(p.tarifas, 0)}</div>`}
+      </div>
+      ${p.depositado == null ? '<span class="chip aviso" style="align-self:flex-start">⚠️ Falta cuánto pusiste al abrirla</span>' : ''}
+    </div>
+
+    <div class="caja">
+      <div class="linea-t">
+        <div class="l"><span style="width:100%"></span></div>
+        <span class="p ini"></span><span class="p fin ${p.cerrada ? '' : 'hoy'}"></span>
+        <span class="dias">${d === 0 ? 'hoy' : d + ' días'}</span>
+        <span class="txt">🟢 Abierta ${fecha(p.abierta)}</span>
+        <span class="txt der">${p.cerrada ? '🔴 Cerrada ' + fecha(p.cerrada) : '⏳ Sigue abierta'}</span>
+      </div>
+    </div>
+
+    <div class="caja">
+      <span class="chip" style="align-self:flex-start">🎯 Rango de precio ${p.precio ? '· ahora ' + eur(p.precio, 0) : ''}</span>
+      ${barraRango(p)}
+    </div>
+
+    <details><summary>📋 Todos los datos</summary>${tablaDatos(p)}</details>
+    ${p.notaDeposito || p.notaCierre ? `<details><summary>📝 Notas</summary><p class="nota">${esc(p.notaDeposito || '')} ${esc(p.notaCierre || '')}</p></details>` : ''}
+    <a class="enlace" href="${esc(p.url)}" target="_blank" rel="noopener">Abrir en Uniswap ↗</a>`;
+  $('#velo').hidden = false;
+  $('#cerrar').focus();
+}
+$('#velo').addEventListener('click', (e) => { if (e.target.id === 'velo' || e.target.id === 'cerrar') $('#velo').hidden = true; });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') $('#velo').hidden = true; });
+
+/* ── 💬 Preguntas ──────────────────────────────── */
+const SUG = ['¿Cuál rinde más?', '¿Cuánto gano en total?', '¿Qué está fuera de rango?', '¿Cuándo compré Bitcoin?', '¿Qué he cerrado?'];
+$('#sugerencias').innerHTML = SUG.map((s) => `<button type="button">${s}</button>`).join('');
+$('#sugerencias').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) { $('#q').value = b.textContent; responder(b.textContent); } });
+$('#f-pregunta').addEventListener('submit', (e) => { e.preventDefault(); responder($('#q').value); });
+
+function responder(q) {
+  const t = q.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  const ps = posiciones(), ab = ps.filter((p) => p.estado !== 'cerrada');
+  const nom = (p) => `<b>${p.par.join('/')} ${p.protocolo.replace('Uniswap ', '')}</b>`;
+  const token = /btc|bitcoin/.test(t) ? 'BTC' : /eth|ether/.test(t) ? 'ETH' : null;
+  let h;
+  if (/compr/.test(t)) {
+    const c = (D.compras || []).filter((x) => !token || x.token.includes(token));
+    h = c.length ? `<p>Tus compras${token ? ' de ' + token : ''}:</p><ul>${c.map((x) => `<li>${fecha(x.fecha)}: ${eur(x.cantidad, 6)} ${x.token} a ${usd(x.precio)}</li>`).join('')}</ul>`
+      : `<p>No tengo compras${token ? ' de ' + token : ''} apuntadas. Mándame la captura y la añado.</p>`;
+    const rel = ps.filter((p) => !token || p.t0.includes(token));
+    if (rel.length) h += `<p>Donde sí tienes ${token || 'cripto'}:</p><ul>${rel.map((p) => `<li>${nom(p)} — abierta ${fecha(p.abierta)}, rango ${eur(p.rango[0], 0)}–${eur(p.rango[1], 0)}</li>`).join('')}</ul>`;
+  } else if (/rentab|rinde|mejor|peor|gana mas|ranking/.test(t)) {
+    const apr = [...ps].sort((a, b) => b.foto.apr - a.foto.apr);
+    const pn = ps.filter((p) => p.pnlPct != null).sort((a, b) => b.pnlPct - a.pnlPct);
+    h = `<p>🏆 Por APR (lo que rinde al año): ${nom(apr[0])} con ${eur(apr[0].foto.apr)} %.</p>
+      <p>💵 Más tarifas cobradas: ${nom([...ps].sort((a, b) => b.tarifas - a.tarifas)[0])}.</p>
+      ${pn.length ? `<p>📈 Mejor ganancia real: ${nom(pn[0])} (${pct(pn[0].pnlPct)}).</p>` : ''}`;
+  } else if (/total|cuanto|gano|ganancia|beneficio|perdid|resumen/.test(t)) {
+    const v = ab.reduce((s, p) => s + p.valor, 0), f = ab.reduce((s, p) => s + p.tarifas, 0);
+    const cd = ps.filter((p) => p.pnl != null), g = cd.reduce((s, p) => s + p.pnl, 0), dp = cd.reduce((s, p) => s + p.depositado, 0);
+    h = `<p>Tienes <b>${usd(v)}</b> en ${ab.length} posiciones abiertas, con <b>${usd(f)}</b> de tarifas sin cobrar.</p>
+      <p>Ganancia de las que sé cuánto pusiste: <b>${usdS(g)}</b> (${dp ? pct(g / dp * 100) : '—'}).</p>
+      ${ps.some((p) => p.depositado == null) ? '<p>⚠️ Me falta lo que pusiste en: ' + ps.filter((p) => p.depositado == null).map(nom).join(', ') + '.</p>' : ''}`;
+  } else if (/rango|fuera|dentro/.test(t)) {
+    const fu = ab.filter((p) => !p.dentro);
+    h = fu.length ? `<p>🔴 Fuera de rango (no cobran tarifas):</p><ul>${fu.map((p) => `<li>${nom(p)} — precio ${eur(p.precio, 0)}, rango ${eur(p.rango[0], 0)}–${eur(p.rango[1], 0)}</li>`).join('')}</ul>`
+      : `<p>🟢 Todas las abiertas están dentro de rango ahora mismo.</p>`;
+  } else if (/cerrad|cerre|cierre/.test(t)) {
+    const ce = ps.filter((p) => p.estado === 'cerrada');
+    h = ce.length ? `<ul>${ce.map((p) => `<li>${nom(p)}: abierta ${fecha(p.abierta)}, cerrada ${fecha(p.cerrada)} (${dias(p.abierta, p.cerrada)} días). Sacaste ${usd(p.valor)}, con ${usd(p.tarifas)} de tarifas.</li>`).join('')}</ul>` : '<p>No has cerrado ninguna.</p>';
+  } else if (token) {
+    const rel = ps.filter((p) => p.t0.includes(token));
+    h = `<p>Posiciones con ${token}:</p><ul>${rel.map((p) => `<li>${nom(p)} — ${p.estado === 'cerrada' ? 'cerrada' : usd(p.valor, 0)}, APR ${eur(p.foto.apr)} %</li>`).join('')}</ul>`;
+  } else {
+    h = '<p>Prueba con: «¿cuál rinde más?», «¿cuánto gano?», «¿qué está fuera de rango?», «¿cuándo compré BTC?» o «¿qué he cerrado?».</p>';
+  }
+  const r = $('#respuesta'); r.innerHTML = h; r.hidden = false;
+}
+</script>
+</body>
+</html>
