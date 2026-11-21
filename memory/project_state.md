@@ -1,10 +1,13 @@
 # Estado del proyecto CriptoHouse
 
-## Último cambio (21-nov-2026)
-- Nueva app para el móvil en `asistente/`: resumen de la cartera, ranking de lo que más rinde, posiciones separadas por tipo y una ficha para cada posición.
-- Los datos van cifrados en `datos.enc.json`; el fichero sin cifrar (`datos.json`) no se sube a GitHub.
-- Para actualizar: editar `asistente/datos.json` → `CLAVE=... node asistente/cifrar.mjs` → commit + push.
+## Último cambio (21-nov-2026, tarde)
+- La app del móvil (`asistente/`) ahora lee TODO en directo de la cadena (solo lectura):
+  - 💧 Pools de Uniswap v3 y v4 en Arbitrum: valor, tarifas sin cobrar, dentro/fuera de rango.
+  - 📜 Historial automático: fecha de apertura y cierre, cuánto se puso y cuánto se sacó.
+  - 👛 Saldos de billeteras en 8 redes EVM + SOL, XRP, XLM, HBAR, XDC, con precio de CoinGecko.
+- Billeteras: la guardada en los datos cifrados + las de CriptoHouse (mismo navegador) + las que se añadan en el móvil.
+- Lector en `asistente/cadena.js`. Datos cifrados en `datos.enc.json`.
 
 ## Pendiente
-- Cuánto se puso al abrir 2 pools: WETH/USDC v4 y WBTC/USDC v4 (la cerrada).
 - Añadir las compras de BTC y otras criptos cuando lleguen las capturas.
+- Staking y préstamos: vacío hasta que haya posiciones.
