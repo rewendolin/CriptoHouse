@@ -7,7 +7,7 @@
 <meta name="robots" content="noindex, nofollow">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Mi Cartera">
-<meta name="theme-color" content="#f4f6f8">
+<meta name="theme-color" content="#f3efe8">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icono.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -15,7 +15,7 @@
 <style>
 /* Layout: una columna estrecha de móvil — resumen → pregunta → ranking → tarjetas; detalle en hoja que sube desde abajo */
 :root{
-  --papel:#f4f6f8; --carta:#ffffff; --tinta:#111821; --gris:#5d6876; --gris2:#98a2ae; --linea:#e3e7ec;
+  --papel:#f3efe8; --carta:#ffffff; --tinta:#111821; --gris:#5d6876; --gris2:#98a2ae; --linea:#e3e7ec;
   --acento:#0f5c66; --acento-suave:#e2f0f1;
   --gana:#178a4c; --gana-suave:#e3f4ea; --pierde:#cc3f2c; --pierde-suave:#fbe7e3; --aviso:#b77c00; --aviso-suave:#fdf2d9;
   --btc:#f2a33a; --eth:#6273e8; --usdc:#2e78d2;
@@ -57,14 +57,14 @@ button:focus-visible,input:focus-visible,summary:focus-visible,.tarjeta:focus-vi
 .punto{width:7px;height:7px;border-radius:50%;background:currentColor}
 
 /* Resumen */
-.resumen{background:var(--tinta);color:#fff;border-radius:20px;padding:20px;display:flex;flex-direction:column;gap:14px}
-.resumen .etq{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:#a9b4c0}
+.resumen{background:linear-gradient(160deg,#e4f1ee,#f7f2e6);border:1px solid #d6e6e1;color:var(--tinta);border-radius:20px;padding:20px;display:flex;flex-direction:column;gap:14px}
+.resumen .etq{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--gris)}
 .resumen .grande{font-family:var(--f-titulo);font-size:38px;font-weight:700;line-height:1}
 .resumen .fila{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 14px}
 .resumen .fila b{display:block;font-family:var(--f-titulo);font-size:17px}
-.resumen .verde{color:#6ee29d} .resumen .rojo{color:#ff8f7d}
+.resumen .verde{color:var(--gana)} .resumen .rojo{color:var(--pierde)}
 .reparto{display:flex;height:10px;border-radius:6px;overflow:hidden;gap:2px}
-.leyenda{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;color:#c7d0da}
+.leyenda{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;color:var(--gris)}
 .leyenda i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:5px}
 
 /* Pregunta */
@@ -393,6 +393,7 @@ async function cargar() {
     const syms = new Set(['WBTC', 'WETH']);
     Object.values(saldos).flat().forEach((t) => syms.add(t.sym));
     Object.values(aaveVivo).flat().forEach((x) => [...x.puesto, ...x.debe].forEach((t) => syms.add(t.sym)));
+    (D.compras || []).forEach((c) => syms.add(c.token));
     precios = { ...precios, ...(await Cadena.precios([...syms]).catch(() => ({}))) };
     ultimaCarga = new Date().toISOString(); vivo = true;
     guardar('ch_asist_cache', { t: ultimaCarga, foto: Object.values(pos), saldos, precios, aave: aaveVivo });
@@ -505,8 +506,20 @@ function bloqueAave(l) {
 
 // 🪙 Cada vez que entró BTC o ETH: compras apuntadas + lo puesto en Aave (con el precio de ese día)
 const FAMILIA = { BTC: /^(WBTC|BTC|cbBTC|BTCB)$/, ETH: /^(WETH|ETH|weETH|wstETH|rETH)$/ };
+const famDe = (t) => FAMILIA[t] || new RegExp('^W?' + t.replace(/[^A-Za-z0-9]/g, '') + '$', 'i');
+const npr = (n) => num(n, n >= 100 ? 0 : n >= 1 ? 2 : 4);
+const precioToken = (t) => precioDe('W' + t) ?? precioDe(t);
+// Palabras que la gente dice → símbolo
+const NOMBRES = { bitcoin: 'BTC', btc: 'BTC', ether: 'ETH', ethereum: 'ETH', eth: 'ETH', ripple: 'XRP', xrp: 'XRP', hedera: 'HBAR', hbar: 'HBAR', stellar: 'XLM', xlm: 'XLM',
+  solana: 'SOL', sol: 'SOL', xdc: 'XDC', aave: 'AAVE', arbitrum: 'ARB', arb: 'ARB', shx: 'SHX', stronghold: 'SHX', bnb: 'BNB', avax: 'AVAX', link: 'LINK', chainlink: 'LINK', pol: 'POL', matic: 'POL', op: 'OP', xpr: 'XPR', metal: 'XPR', sui: 'SUI' };
+function monedaDe(t) {
+  for (const w of t.split(/[^a-z0-9]+/)) if (NOMBRES[w]) return NOMBRES[w];
+  const c = (D.compras || []).find((x) => t.split(/[^a-z0-9]+/).includes(x.token.toLowerCase().replace(/^w(?=btc|eth)/, '')));
+  return c ? c.token.replace(/^W(?=BTC|ETH)/, '') : null;
+}
+const monedasCompradas = () => [...new Set(['BTC', 'ETH', ...(D.compras || []).map((c) => c.token.replace(/^W(?=BTC|ETH)/, ''))])];
 function entradas(token) {
-  const fam = FAMILIA[token], bs = billeteras();
+  const fam = famDe(token), bs = billeteras();
   const nombreDe = (d) => bs.find((b) => b.dir.toLowerCase() === d)?.nombre || corta(d);
   const out = (D.compras || []).filter((c) => fam.test(c.token)).map((c) => ({ fecha: c.fecha, cant: c.cantidad, precio: c.precio, pagado: c.pagado ?? c.cantidad * c.precio, donde: c.origen || 'Compra', quien: c.billetera || '', nota: c.nota, exacto: true }));
   for (const [k, h] of Object.entries(aaveHist)) {
@@ -520,11 +533,11 @@ function entradas(token) {
   return out.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
 }
 function respuestaCompras(token) {
-  const fichas = (token ? [token] : ['BTC', 'ETH']).map((t) => {
+  const fichas = (token ? [token] : monedasCompradas()).map((t) => {
     const e = entradas(t); if (!e.length) return '';
-    const ahora = precioDe('W' + t), cant_ = e.reduce((s, x) => s + x.cant, 0), pag = e.reduce((s, x) => s + x.pagado, 0), medio = pag / cant_;
-    return `<p>🪙 <b>${t}</b>: ${e.length} entradas · precio medio <b>${num(medio, 0)}</b> · hoy ${num(ahora, 0)} (${pct((ahora / medio - 1) * 100)})</p>
-      <ul>${e.map((x) => `<li>${fecha(x.fecha)}: ${cant(x.cant, t)} a <b>${x.exacto ? '' : '≈'}${num(x.precio, 0)}</b> <span class="${colorPnl(ahora - x.precio)}">${pct((ahora / x.precio - 1) * 100)}</span></li>`).join('')}</ul>`;
+    const ahora = precioToken(t), cant_ = e.reduce((s, x) => s + x.cant, 0), pag = e.reduce((s, x) => s + x.pagado, 0), medio = pag / cant_;
+    return `<p>🪙 <b>${t}</b>: ${e.length} entradas · precio medio <b>${npr(medio)}</b> · hoy ${npr(ahora)} (${pct((ahora / medio - 1) * 100)})</p>
+      <ul>${e.map((x) => `<li>${fecha(x.fecha)}: ${cant(x.cant, t)} a <b>${x.exacto ? '' : '≈'}${npr(x.precio)}</b> <span class="${colorPnl(ahora - x.precio)}">${pct((ahora / x.precio - 1) * 100)}</span></li>`).join('')}</ul>`;
   }).join('');
   return fichas + (fichas ? '<p><small>≈ = precio de ese día (lo puesto en Aave). Sin ≈ = precio exacto de tu compra.</small></p>' : '') || '<p>No encuentro compras apuntadas. Mándame la captura y las añado.</p>';
 }
@@ -618,7 +631,7 @@ function pintarRanking(ps, ls) {
 }));
 
 function pintarTipos(ps, cs, ls) {
-  const n = { liquidez: ps.length, billetera: cs.length, compra: entradas('BTC').length + entradas('ETH').length, staking: 0, prestamo: ls.length };
+  const n = { liquidez: ps.length, billetera: cs.length, compra: monedasCompradas().reduce((s, t) => s + entradas(t).length, 0), staking: 0, prestamo: ls.length };
   $('#tipos').innerHTML = TIPOS.map((t) => `<button data-tipo="${t.id}" aria-pressed="${t.id === tipoActivo}">${t.e} ${t.n} <span class="n">${n[t.id]}</span></button>`).join('');
 }
 $('#tipos').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) { tipoActivo = b.dataset.tipo; pintar(); } });
@@ -648,11 +661,11 @@ function pintarLista(ps, cs, ls) {
     return;
   }
   if (tipoActivo === 'compra') {
-    const c = ['BTC', 'ETH'].flatMap((t) => entradas(t).map((x) => ({ ...x, t }))).sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
-    const medio = (t) => { const e = c.filter((x) => x.t === t); if (!e.length) return ''; const m = e.reduce((s, x) => s + x.pagado, 0) / e.reduce((s, x) => s + x.cant, 0), ah = precioDe('W' + t);
-      return `<div class="tarjeta"><div class="t-cab">${monedas([t])}<div class="t-nom"><b>${t} · precio medio ${num(m, 0)}</b><small>hoy ${num(ah, 0)} · ${e.length} entradas</small></div><span class="chip ${ah >= m ? 'gana' : 'pierde'}">${pct((ah / m - 1) * 100)}</span></div></div>`; };
-    $('#lista').innerHTML = c.length ? medio('BTC') + medio('ETH') + c.map((x, i) => { const ah = precioDe('W' + x.t), g = (ah / x.precio - 1) * 100; return `
-      <details data-k="c${i}" ${abiertos.has('c' + i) ? 'open' : ''}><summary><span>${monedas([x.t])}</span><span style="flex:1;margin:0 10px;min-width:0"><b>${cant(x.cant, x.t)}</b> a ${x.exacto ? '' : '≈'}${num(x.precio, 0)}<br><small class="gris-t">${fecha(x.fecha)} · ${esc(x.quien || x.donde)}</small></span><span class="chip ${g >= 0 ? 'gana' : 'pierde'}">${pct(g)}</span></summary>
+    const c = monedasCompradas().flatMap((t) => entradas(t).map((x) => ({ ...x, t }))).sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+    const medio = (t) => { const e = c.filter((x) => x.t === t); if (!e.length) return ''; const m = e.reduce((s, x) => s + x.pagado, 0) / e.reduce((s, x) => s + x.cant, 0), ah = precioToken(t);
+      return `<div class="tarjeta"><div class="t-cab">${monedas([t])}<div class="t-nom"><b>${t} · precio medio ${npr(m)}</b><small>hoy ${npr(ah)} · ${e.length} entradas</small></div><span class="chip ${ah >= m ? 'gana' : 'pierde'}">${pct((ah / m - 1) * 100)}</span></div></div>`; };
+    $('#lista').innerHTML = c.length ? monedasCompradas().map(medio).join('') + c.map((x, i) => { const ah = precioToken(x.t), g = (ah / x.precio - 1) * 100; return `
+      <details data-k="c${i}" ${abiertos.has('c' + i) ? 'open' : ''}><summary><span>${monedas([x.t])}</span><span style="flex:1;margin:0 10px;min-width:0"><b>${cant(x.cant, x.t)}</b> a ${x.exacto ? '' : '≈'}${npr(x.precio)}<br><small class="gris-t">${fecha(x.fecha)} · ${esc(x.quien || x.donde)}</small></span><span class="chip ${g >= 0 ? 'gana' : 'pierde'}">${pct(g)}</span></summary>
         <dl class="dl num"><dt>Pagaste</dt><dd>${usd(x.pagado)}</dd><dt>Vale hoy</dt><dd>${usd(x.cant * ah)}</dd><dt>De dónde</dt><dd>${esc(x.donde)}</dd><dt>Precio</dt><dd>${x.exacto ? 'exacto' : 'el de ese día'}</dd></dl>${x.nota ? `<p class="nota">${esc(x.nota)}</p>` : ''}</details>`; }).join('')
       : vacio('🪙', 'Compras sin apuntar', 'Mándame la captura de la compra (exchange o billetera) y la añado con fecha y precio.');
     return;
@@ -835,7 +848,7 @@ $('#velo').addEventListener('click', (e) => { if (e.target.id === 'velo' || e.ta
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') $('#velo').hidden = true; });
 
 /* ── 💬 Preguntas ──────────────────────────────── */
-const SUG = ['¿A cuánto compré Bitcoin?', '¿Cuál rinde más?', '¿Cuánto tengo en total?', '¿Cómo van mis loopings?', '¿Qué está fuera de rango?', '¿Qué he cerrado?'];
+const SUG = ['¿A cuánto compré Bitcoin?', '¿A cuánto compré XRP?', '¿Cuál rinde más?', '¿Cuánto tengo en total?', '¿Cómo van mis loopings?', '¿Qué está fuera de rango?', '¿Qué he cerrado?'];
 $('#sugerencias').innerHTML = SUG.map((s) => `<button type="button">${s}</button>`).join('');
 $('#sugerencias').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) { $('#q').value = b.textContent; responder(b.textContent); } });
 $('#f-pregunta').addEventListener('submit', (e) => { e.preventDefault(); responder($('#q').value); });
@@ -844,7 +857,7 @@ function responder(q) {
   const t = q.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
   const ps = pools(), ab = ps.filter((p) => !p.cerrada), cs = carteras();
   const nom = (p) => `<b>${nombrePool(p)}</b>`;
-  const token = /btc|bitcoin/.test(t) ? 'BTC' : /eth|ether/.test(t) ? 'ETH' : null;
+  const token = monedaDe(t);
   let h;
   if (/compr|cuando puse|cuando meti|a cuanto|precio medio/.test(t) || (token && !/pool|rango|rinde/.test(t))) {
     h = respuestaCompras(token);
