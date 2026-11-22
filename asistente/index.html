@@ -457,7 +457,7 @@ function vista(p) {
   if (cerrada) {
     o.valor = h.retiradoUSD ?? (h.retirado ? h.retirado.x * (precioDe(p.par[0]) ?? p.precio) + h.retirado.y : null);
     o.tarifas = null;
-    o.pnl = o.valor != null && o.depositado != null ? o.valor - o.depositado : null;
+    o.pnl = o.valor != null && o.depositado != null ? o.valor + (h.cobradoUSD || 0) - o.depositado : null;
   } else {
     o.pnl = o.depositado != null ? p.valor + p.tarifas + (h.cobradoUSD || 0) - o.depositado : null;
   }
