@@ -530,7 +530,7 @@ function entradas(token) {
   for (const [k, h] of Object.entries(aaveHist)) {
     const d = k.split('|')[0];
     for (const o of h.movs || []) {
-      if (o.tipo !== 'poner' || !fam.test(o.sym) || !o.precio || o.usd < 20) continue;
+      if (o.tipo !== 'poner' || !fam.test(o.sym) || !o.precio || o.usd < 20 || (D.noEsCompra || []).includes(o.tx)) continue;
       const igual = out.some((c) => c.exacto && Math.abs(new Date(c.fecha) - new Date(o.fecha)) < 3 * 36e5 && Math.abs(c.cant - o.cant) / o.cant < 0.05);
       if (!igual) out.push({ fecha: o.fecha, cant: o.cant, precio: o.precio, pagado: o.usd, donde: 'Puesto en Aave', quien: nombreDe(d), exacto: false });
     }
