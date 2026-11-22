@@ -18,3 +18,4 @@
 - Billetera «mucho» (0x87406…b30e4) añadida en datos.json (cifrado). Historia precargada en datos.json → aave; la app solo trae lo nuevo cada 30 min.
 - Compras: «¿a cuánto compré BTC/ETH?» junta compras apuntadas (datos.json → compras, precio exacto) + lo puesto en Aave (precio del día, marcado ≈). Precio medio y % frente a hoy. Pestaña Compras rellena.
 - 22-nov: fondo crema y resumen claro (el negro cansaba la vista). Preguntas de compras valen para cualquier moneda (XRP, HBAR…) si está en datos.json → compras. PENDIENTE: direcciones completas de las cuentas Rabby (METAL XPR, HBAR 2K, POOL ETH extraAMPLIO, papas rabby, trading, DCA BTC) para ponerles nombre y leerlas.
+- 22-nov: cuenta «mucho» con sus 6 pools Uniswap v3 (historial en datos.json; 5325340 abierta, tarifas ya cobradas en cobradoUSD). Nombres de cuentas por principio…final en NOMBRE_CUENTA (index.html). Compra WBTC 23-feb-2026 a 86.516 (conversión en pool 5220652).

@@ -322,10 +322,15 @@ async function entrar(clave, recordar) {
 $('#candado').addEventListener('submit', (e) => { e.preventDefault(); entrar($('#clave').value, $('#recordar').checked); });
 
 /* ── 👛 Billeteras: las del candado + las de CriptoHouse + las añadidas aquí ── */
+// Nombres de las cuentas (como salen en Rabby / MetaMask: principio…final)
+const NOMBRE_CUENTA = [['0x87406', 'b30e4', 'mucho'], ['0xd6cff1', '07bc4e', 'ETH AAVE pools'], ['0x01bd4d', 'f0754a', 'METAL XPR'], ['0x111d1d', '0f53c7', 'HBAR 2K'],
+  ['0x1c31c5', 'ee73c1', 'POOL ETH extraAMPLIO'], ['0xcb1426', '0bff8e', 'papas rabby'], ['0xcd4796', '2377b9', 'trading'], ['0xdc724f', '0e7a6a', 'DCA BTC']];
+const nombreCuenta = (dir, otro) => { const d = dir.toLowerCase(); return NOMBRE_CUENTA.find(([a, z]) => d.startsWith(a) && d.endsWith(z))?.[2] || otro; };
 function billeteras() {
   const out = [], visto = new Set();
   const meter = (nombre, dir, origen) => {
     dir = String(dir || '').trim();
+    nombre = nombreCuenta(dir, nombre);
     if (!dir || !Cadena.tipoDireccion(dir)) return;
     const k = dir.toLowerCase(); if (visto.has(k)) return; visto.add(k);
     out.push({ nombre: nombre || 'Billetera', dir, origen });
@@ -454,7 +459,7 @@ function vista(p) {
     o.tarifas = null;
     o.pnl = o.valor != null && o.depositado != null ? o.valor - o.depositado : null;
   } else {
-    o.pnl = o.depositado != null ? p.valor + p.tarifas - o.depositado : null;
+    o.pnl = o.depositado != null ? p.valor + p.tarifas + (h.cobradoUSD || 0) - o.depositado : null;
   }
   o.pnlPct = o.pnl != null && o.depositado ? o.pnl / o.depositado * 100 : null;
   o.dias = h.abierta ? dias(h.abierta, h.cerrada) : null;
@@ -692,7 +697,7 @@ function pintarLista(ps, cs, ls) {
   $('#lista').innerHTML = ps.map((p) => `
     <button class="tarjeta ${p.cerrada ? 'cerrada' : ''}" data-id="${p.k}" aria-label="Ver ${nombrePool(p)}">
       <div class="t-cab">${monedas(p.par)}
-        <div class="t-nom"><b>${p.par.join(' / ')}</b><small>Uniswap ${p.version} · ${num(p.comisionPct, 2)} % · ${p.h.abierta ? fecha(p.h.abierta) : 'Arbitrum'}</small></div>
+        <div class="t-nom"><b>${p.par.join(' / ')}</b><small>👛 ${esc(nombreCuenta(p.dueño || '', 'Arbitrum'))} · ${p.version} · ${p.h.abierta ? fecha(p.h.abierta) : ''}</small></div>
         ${chipEstado(p)}
       </div>
       ${barraRango(p)}
@@ -725,16 +730,18 @@ function tablaDatos(p) {
     ['Cerrada', h.cerrada ? fechaHora(h.cerrada) : p.cerrada ? 'sí' : 'sigue abierta'],
     ['Días', p.dias ?? '—'],
     ['Rango', `${num(p.rango[0])} → ${num(p.rango[1])}`],
+    ['Cuenta', `${esc(nombreCuenta(p.dueño || '', '—'))} · ${esc(corta(p.dueño || ''))}`],
     ['Pusiste', puesto(h.puesto, p.par)],
     ['Valor al poner', usd(p.depositado)],
     ['Precio al abrir', h.precioApertura ? num(h.precioApertura) : '—'],
   ];
   if (!p.cerrada) {
-    f.push(['Dentro ahora', `${cant(p.cant.x, p.par[0])} + ${cant(p.cant.y, p.par[1])}`]);
-    f.push(['Tarifas sin cobrar', `${cant(p.tarifasCant.x, p.par[0])} + ${cant(p.tarifasCant.y, p.par[1])}`]);
+    f.push(['Dentro ahora', puesto(p.cant, p.par)]);
+    f.push(['Tarifas sin cobrar', puesto(p.tarifasCant, p.par)]);
     if (p.tarifasAnual != null) f.push(['Tarifas al año', num(p.tarifasAnual) + ' %']);
   }
   if (h.retirado) f.push(['Sacaste', puesto(h.retirado, p.par)]);
+  if (h.cobradoUSD) f.push(['Tarifas ya cobradas', usd(h.cobradoUSD)]);
   if (p.anual != null) f.push(['Rentab. al año', pct(p.anual)]);
   return `<dl class="dl num">${f.map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join('')}</dl>`;
 }
