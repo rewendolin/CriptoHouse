@@ -1,3 +1,5 @@
 uploads/
 .DS_Store
 asistente/datos.json
+asistente/vigia-estado.json
+asistente/sha3.min.js
