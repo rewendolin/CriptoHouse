@@ -11,3 +11,8 @@
 ## Pendiente
 - Añadir las compras de BTC y otras criptos cuando lleguen las capturas.
 - Staking y préstamos: vacío hasta que haya posiciones.
+
+## 22-nov-2026 — Loopings de Aave en el asistente
+- cadena.js lee Aave v3 (6 redes): lo puesto, lo debido, salud, intereses; y todos los movimientos (Supply/Borrow/Repay/Withdraw + traspasos de aTokens) con precio del día (Binance).
+- La app los muestra dentro de cada billetera, en la pestaña Préstamos, en el ranking y en el total. Ficha con salud, precio de liquidación y movimientos.
+- Billetera «mucho» (0x87406…b30e4) añadida en datos.json (cifrado). Historia precargada en datos.json → aave; la app solo trae lo nuevo cada 30 min.

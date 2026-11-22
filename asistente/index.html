@@ -60,7 +60,7 @@ button:focus-visible,input:focus-visible,summary:focus-visible,.tarjeta:focus-vi
 .resumen{background:var(--tinta);color:#fff;border-radius:20px;padding:20px;display:flex;flex-direction:column;gap:14px}
 .resumen .etq{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:#a9b4c0}
 .resumen .grande{font-family:var(--f-titulo);font-size:38px;font-weight:700;line-height:1}
-.resumen .fila{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.resumen .fila{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 14px}
 .resumen .fila b{display:block;font-family:var(--f-titulo);font-size:17px}
 .resumen .verde{color:#6ee29d} .resumen .rojo{color:#ff8f7d}
 .reparto{display:flex;height:10px;border-radius:6px;overflow:hidden;gap:2px}
@@ -82,12 +82,12 @@ button:focus-visible,input:focus-visible,summary:focus-visible,.tarjeta:focus-vi
 .bloque{display:flex;flex-direction:column;gap:10px}
 .cab-bloque{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
 .ranking{background:var(--carta);border:1px solid var(--linea);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:12px}
-.rk{display:grid;grid-template-columns:110px minmax(0,1fr) 62px;gap:10px;align-items:center;font-size:13px}
+.rk{display:grid;grid-template-columns:110px minmax(0,1fr) 74px;gap:10px;align-items:center;font-size:13px}
 .rk .nom{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rk .nom small{display:block;font-weight:400;color:var(--gris2)}
 .rk .barra{height:12px;background:var(--papel);border-radius:6px;overflow:hidden}
 .rk .barra span{display:block;height:100%;border-radius:6px;background:var(--acento)}
-.rk .val{text-align:right;font-weight:600}
+.rk .val{text-align:right;font-weight:600;white-space:nowrap}
 .conmutar{display:flex;background:var(--linea);border-radius:10px;padding:3px}
 .conmutar button{border:0;background:none;padding:5px 10px;border-radius:8px;font-size:12px;font-weight:600;color:var(--gris)}
 .conmutar button[aria-pressed=true]{background:var(--carta);color:var(--tinta);box-shadow:0 1px 2px rgba(0,0,0,.08)}
@@ -183,6 +183,18 @@ a.enlace{color:var(--acento);font-weight:600;text-decoration:none}
 .girando{animation:gira 1s linear infinite}
 @keyframes gira{to{transform:rotate(360deg)}}
 .cab-der{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end;min-width:0}
+/* Aave */
+.aave{border-top:1px solid var(--linea);padding-top:10px;display:flex;flex-direction:column;gap:8px;border:0;background:none;text-align:left;width:100%;padding-left:0;padding-right:0}
+.aave .fila-a{display:flex;align-items:center;gap:8px}
+.aave .fila-a b{flex:1;font-family:var(--f-titulo)}
+.balanza{display:flex;height:12px;border-radius:6px;overflow:hidden;background:var(--papel)}
+.balanza .pon{background:var(--acento)} .balanza .deb{background:var(--pierde);opacity:.85}
+.mini{display:flex;justify-content:space-between;font-size:12px;color:var(--gris)}
+.salud{position:relative;height:14px;border-radius:7px;background:linear-gradient(90deg,var(--pierde) 0%,var(--aviso) 30%,var(--gana) 60%,var(--gana) 100%)}
+.salud i{position:absolute;top:-4px;width:4px;height:22px;border-radius:2px;background:var(--tinta);box-shadow:0 0 0 2px var(--carta)}
+.movs{list-style:none;margin:0;padding:0 14px 12px;display:flex;flex-direction:column;gap:6px;font-size:13px}
+.movs li{display:grid;grid-template-columns:72px minmax(0,1fr) auto;gap:8px;align-items:baseline}
+.movs small{color:var(--gris2)}
 @media (max-width:380px){.rk{grid-template-columns:86px 1fr 56px}.resumen .grande{font-size:32px}}
 </style>
 </head>
@@ -265,7 +277,7 @@ const fecha = (s) => s ? new Date(s).toLocaleDateString('es-ES', { day: 'numeric
 const fechaHora = (s) => s ? new Date(s).toLocaleString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—';
 const hora = (s) => new Date(s).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
 const dias = (a, b) => Math.max(0, Math.round((new Date(b || Date.now()) - new Date(a)) / 864e5));
-const corta = (a) => a.length > 14 ? a.slice(0, 6) + '…' + a.slice(-4) : a;
+const corta = (a) => a.length > 14 ? a.slice(0, 7) + '…' + a.slice(-5) : a;
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const guardar = (k, v) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, typeof v === 'string' ? v : JSON.stringify(v)); } catch (e) {} };
 const leer = (k, json) => { try { const v = localStorage.getItem(k); return json ? (v ? JSON.parse(v) : null) : v; } catch (e) { return null; } };
@@ -277,10 +289,10 @@ const TIPOS = [
   { id: 'billetera', e: '👛', n: 'Billeteras' },
   { id: 'compra', e: '🪙', n: 'Compras' },
   { id: 'staking', e: '🔒', n: 'Staking' },
-  { id: 'prestamo', e: '🏦', n: 'Préstamos' },
+  { id: 'prestamo', e: '🏦', n: 'Préstamos (Aave)' },
 ];
 
-let D = null, pos = {}, hist = {}, saldos = {}, precios = {}, cargando = false, ultimaCarga = null, vivo = false;
+let D = null, pos = {}, hist = {}, saldos = {}, precios = {}, aaveVivo = {}, aaveHist = {}, cargando = false, ultimaCarga = null, vivo = false;
 let tipoActivo = 'liquidez', medida = 'pct';
 
 /* ── 🔐 Candado ─────────────────────────────────── */
@@ -330,7 +342,9 @@ function arrancar() {
   const cache = leer('ch_asist_cache', true);
   const fuente = cache && new Date(cache.t) > new Date(D.actualizado) ? cache : { t: D.actualizado, foto: D.foto, saldos: D.fotoSaldos, precios: {} };
   (fuente.foto || []).forEach((p) => pos[p.version + '-' + p.id] = p);
-  saldos = fuente.saldos || {}; precios = fuente.precios || {}; ultimaCarga = fuente.t;
+  saldos = fuente.saldos || {}; precios = fuente.precios || {}; aaveVivo = fuente.aave || D.fotoAave || {}; ultimaCarga = fuente.t;
+  aaveHist = { ...(D.aave || {}) };
+  for (const [k, v] of Object.entries(leer('ch_asist_aave', true) || {})) if (!aaveHist[k] || v.hasta > aaveHist[k].hasta) aaveHist[k] = v;
   hist = { ...(D.historial || {}), ...(leer('ch_asist_hist', true) || {}) };
   pintar();
   cargar();
@@ -371,14 +385,20 @@ async function cargar() {
     const s = {};
     await Promise.all(bs.map(async (b) => { s[b.dir] = await Cadena.saldos(b.dir).catch(() => saldos[b.dir] || []); }));
     saldos = s;
+    // 🏦 Aave (lo puesto y lo que se debe)
+    const av = {};
+    await Promise.all(evm.map(async (b) => { av[b.dir.toLowerCase()] = await Cadena.aave(b.dir).catch(() => aaveVivo[b.dir.toLowerCase()] || []); }));
+    aaveVivo = av;
     // 💵 Precios
     const syms = new Set(['WBTC', 'WETH']);
     Object.values(saldos).flat().forEach((t) => syms.add(t.sym));
+    Object.values(aaveVivo).flat().forEach((x) => [...x.puesto, ...x.debe].forEach((t) => syms.add(t.sym)));
     precios = { ...precios, ...(await Cadena.precios([...syms]).catch(() => ({}))) };
     ultimaCarga = new Date().toISOString(); vivo = true;
-    guardar('ch_asist_cache', { t: ultimaCarga, foto: Object.values(pos), saldos, precios });
+    guardar('ch_asist_cache', { t: ultimaCarga, foto: Object.values(pos), saldos, precios, aave: aaveVivo });
     pintar();
     completarHistorial();
+    completarAave();
   } catch (e) {
     vivo = false;
   } finally {
@@ -401,6 +421,27 @@ async function completarHistorial() {
   }
 }
 
+// Aave: trae solo los movimientos nuevos (como mucho cada 30 min) y les pone el precio de ese día
+let aaveOcupado = false;
+async function completarAave() {
+  if (aaveOcupado) return; aaveOcupado = true;
+  const guardado = leer('ch_asist_aave', true) || {};
+  try {
+    for (const [d, lista] of Object.entries(aaveVivo)) for (const x of lista) {
+      const k = d + '|' + x.red, h = aaveHist[k];
+      if (h && Date.now() - (h.mirado || 0) < 18e5) continue;
+      if (!h && Date.now() - (guardado[k]?.mirado || 0) < 864e5 && guardado[k]?.fallo) continue;
+      try {
+        const hasta = Number(await Cadena.rpc(x.red, 'eth_blockNumber', []));
+        const nuevos = await Cadena.movimientosAave(x.red, d, h ? h.hasta + 1 : null);
+        for (const o of nuevos) { o.precio = await Cadena.precioPasado(o.sym, o.fecha).catch(() => null); o.usd = o.precio == null ? null : +(o.cant * o.precio).toFixed(2); o.b = o.bloque; delete o.bloque; }
+        aaveHist[k] = { hasta, mirado: Date.now(), movs: [...(h?.movs || []), ...nuevos] };
+        guardado[k] = aaveHist[k]; guardar('ch_asist_aave', guardado); pintar();
+      } catch (e) { guardado[k] = { ...(guardado[k] || {}), mirado: Date.now(), fallo: true }; guardar('ch_asist_aave', guardado); }
+    }
+  } finally { aaveOcupado = false; }
+}
+
 /* ── 🧮 Cálculos ─────────────────────────────────── */
 const precioDe = (sym) => ESTABLE.test(sym) ? 1 : precios[sym]?.usd ?? Object.values(pos).find((p) => p.par[0] === sym)?.precio;
 function vista(p) {
@@ -420,6 +461,48 @@ function vista(p) {
   o.tarifasAnual = !cerrada && o.dias >= 7 && p.valor ? p.tarifas / p.valor * 100 * 365 / o.dias : null;
   return o;
 }
+// 🏦 Un "looping" por billetera y red: lo puesto menos lo que se debe
+const SIGNO_MOV = { poner: 1, devolver: 1, pedir: -1, sacar: -1, enviar: -1, premio: 0 };
+const MOV = { poner: ['📥', 'Pusiste'], pedir: ['💸', 'Pediste'], devolver: ['↩️', 'Devolviste'], sacar: ['📤', 'Sacaste'], enviar: ['➡️', 'Enviaste fuera'], premio: ['🎁', 'Premio recibido'] };
+function prestamos() {
+  const bs = billeteras(), out = [];
+  for (const [d, lista] of Object.entries(aaveVivo)) for (const x of lista) {
+    const b = bs.find((y) => y.dir.toLowerCase() === d) || { nombre: 'Billetera', dir: d };
+    const k = 'aave:' + d + '|' + x.red, h = aaveHist[d + '|' + x.red];
+    const pr = (t) => precioDe(t.sym) ?? 0;
+    const col = x.puesto.reduce((s, t) => s + t.cant * pr(t), 0) || x.colUSD, deuda = x.debe.reduce((s, t) => s + t.cant * pr(t), 0) || x.deudaUSD;
+    const vale = col - deuda;
+    const movs = h?.movs || [];
+    const sinPrecio = movs.some((o) => o.usd == null && SIGNO_MOV[o.tipo]);
+    const puestoNeto = movs.length && !sinPrecio ? movs.reduce((s, o) => s + (o.interno ? 0 : SIGNO_MOV[o.tipo] || 0) * o.usd, 0) : null;
+    const pnl = puestoNeto == null ? null : vale - puestoNeto;
+    // Precio al que te liquidan (si solo cae lo volátil y lo estable se queda igual)
+    const vol = x.puesto.filter((t) => !ESTABLE.test(t.sym)), est = x.puesto.filter((t) => ESTABLE.test(t.sym));
+    const V = vol.reduce((s, t) => s + t.cant * pr(t) * t.lt, 0), S = est.reduce((s, t) => s + t.cant * t.lt, 0);
+    const f = V > 0 && deuda > 0 ? (deuda - S) / V : null;
+    const principal = vol.sort((a, c) => c.cant * pr(c) - a.cant * pr(a))[0];
+    out.push({ k, b, red: x.red, x, col, deuda, vale, hf: x.hf, movs, puestoNeto, pnl, pnlPct: pnl != null && puestoNeto > 0 ? pnl / puestoNeto * 100 : null,
+      abierta: movs[0]?.fecha || null, dias: movs[0] ? dias(movs[0].fecha) : null, principal,
+      liq: f != null && principal ? { sym: principal.sym, precio: pr(principal) * f, caida: (1 - f) * 100 } : null,
+      interesGana: x.puesto.reduce((s, t) => s + t.cant * pr(t) * t.apy / 100, 0), interesPaga: x.debe.reduce((s, t) => s + t.cant * pr(t) * t.apy / 100, 0) });
+  }
+  return out.sort((a, c) => c.vale - a.vale);
+}
+const nombreLoop = (l) => 'Looping ' + (l.principal?.sym || l.x.puesto[0]?.sym || '');
+const chipSalud = (hf) => hf == null ? '<span class="chip gana">Sin deuda</span>'
+  : `<span class="chip ${hf >= 2 ? 'gana' : hf >= 1.3 ? 'aviso' : 'pierde'}"><span class="punto"></span>Salud ${num(hf, 2)}</span>`;
+function balanza(l) {
+  return `<div class="balanza" aria-label="Puesto frente a deuda"><span class="deb" style="flex:${l.deuda}"></span><span class="pon" style="flex:${Math.max(l.vale, 0)}"></span></div>
+    <div class="mini num"><span>🔴 Debes ${usd(l.deuda, 0)}</span><span>🟢 Tuyo ${usd(l.vale, 0)}</span></div>`;
+}
+function bloqueAave(l) {
+  return `<button class="aave" data-id="${l.k}" aria-label="Ver ${nombreLoop(l)}">
+    <div class="fila-a"><span>🏦</span><b>${nombreLoop(l)} · Aave</b>${chipSalud(l.hf)}</div>
+    ${balanza(l)}
+    <div class="mini num"><span>Resultado ${l.pnl == null ? 'calculando…' : `<b class="${colorPnl(l.pnl)}">${usdS(l.pnl, 0)} (${pct(l.pnlPct)})</b>`}</span><span>Ver ›</span></div>
+  </button>`;
+}
+
 const pools = () => Object.values(pos).map(vista).sort((a, b) => a.cerrada - b.cerrada || new Date(b.h.abierta || 0) - new Date(a.h.abierta || 0));
 function carteras() {
   return billeteras().map((b) => {
@@ -469,33 +552,37 @@ function pintar() {
   const abiertas = ps.filter((p) => !p.cerrada);
   const enPools = abiertas.reduce((s, p) => s + p.valor + p.tarifas, 0);
   const enBill = cs.reduce((s, c) => s + c.total, 0);
-  const total = enPools + enBill;
+  const ls = prestamos(), enAave = ls.reduce((s, l) => s + l.vale, 0);
+  const pnlAave = ls.filter((l) => l.pnl != null).reduce((s, l) => s + l.pnl, 0);
+  const total = enPools + enBill + enAave;
   const conDep = ps.filter((p) => p.pnl != null);
   const pnl = conDep.reduce((s, p) => s + p.pnl, 0), dep = conDep.reduce((s, p) => s + p.depositado, 0);
   const pnlAb = abiertas.filter((p) => p.pnl != null).reduce((s, p) => s + p.pnl, 0);
-  const trozos = [...abiertas.map((p) => ({ n: nombrePool(p), v: p.valor + p.tarifas, c: COLOR[p.par[0]] })), { n: '👛 Billeteras', v: enBill, c: '#7fc8c0' }].filter((t) => t.v > 0);
+  const trozos = [...abiertas.map((p) => ({ n: nombrePool(p), v: p.valor + p.tarifas, c: COLOR[p.par[0]] })), { n: '👛 Billeteras', v: enBill, c: '#7fc8c0' }, ...ls.map((l) => ({ n: '🏦 ' + nombreLoop(l), v: l.vale, c: COLOR[l.principal?.sym] || '#b98be8' }))].filter((t) => t.v > 0);
   $('#resumen').innerHTML = `
     <div><div class="etq">Tengo ahora mismo</div><div class="grande num">${usd(total)}</div></div>
     <div class="fila">
       <div><span class="etq">💧 Pools</span><b class="num">${usd(enPools, 0)}</b></div>
       <div><span class="etq">👛 Billeteras</span><b class="num">${usd(enBill, 0)}</b></div>
-      <div><span class="etq">📈 Ganado pools</span><b class="num ${pnl >= 0 ? 'verde' : 'rojo'}">${usdS(pnl, 0)}</b></div>
+      <div><span class="etq">🏦 Aave (lo tuyo)</span><b class="num">${usd(enAave, 0)}</b></div>
+      <div><span class="etq">📈 Ganado total</span><b class="num ${pnl + pnlAave >= 0 ? 'verde' : 'rojo'}">${usdS(pnl + pnlAave, 0)}</b></div>
     </div>
     <div class="reparto">${trozos.map((t, i) => `<span style="flex:${t.v};background:${t.c};opacity:${1 - (i % 2) * 0.35}"></span>`).join('')}</div>
     <div class="leyenda">${trozos.map((t, i) => `<span><i style="background:${t.c};opacity:${1 - (i % 2) * 0.35}"></i>${esc(t.n)} ${num(t.v / total * 100, 0)} %</span>`).join('')}</div>
-    <div class="leyenda">Rentabilidad de todas las pools: <b style="margin-left:4px">${dep ? pct(pnl / dep * 100) : '—'}</b> · abiertas ${usdS(pnlAb, 0)}</div>`;
-  pintarRanking(ps); pintarTipos(ps, cs); pintarLista(ps, cs);
+    <div class="leyenda">💧 Pools: <b style="margin:0 4px">${usdS(pnl, 0)}</b> (${dep ? pct(pnl / dep * 100) : '—'}) · 🏦 Aave: <b style="margin-left:4px">${usdS(pnlAave, 0)}</b></div>`;
+  pintarRanking(ps, ls); pintarTipos(ps, cs, ls); pintarLista(ps, cs, ls);
   $('#pie').textContent = 'Leído de la cadena ' + fechaHora(ultimaCarga) + ' · se actualiza solo cada 90 s';
 }
 
-function pintarRanking(ps) {
+function pintarRanking(ps, ls) {
   const val = (p) => medida === 'pct' ? p.pnlPct : medida === 'usd' ? p.pnl : p.tarifas;
-  const lista = ps.filter((p) => val(p) != null && (medida !== 'tarifas' || !p.cerrada)).sort((a, b) => val(b) - val(a));
+  const loops = medida === 'tarifas' ? [] : ls.filter((l) => val(l) != null).map((l) => ({ ...l, par: [nombreLoop(l)], version: 'Aave · ' + l.b.nombre, cerrada: false, h: { abierta: l.abierta } }));
+  const lista = [...loops, ...ps].filter((p) => val(p) != null && (medida !== 'tarifas' || !p.cerrada)).sort((a, b) => val(b) - val(a));
   const max = Math.max(...lista.map((p) => Math.abs(val(p))), 0.0001);
   const fmt = (p) => medida === 'pct' ? pct(val(p)) : medida === 'usd' ? usdS(val(p), 0) : usd(val(p), 0);
   $('#ranking').innerHTML = lista.map((p) => `
     <button class="rk" style="border:0;background:none;padding:0;text-align:left" data-id="${p.k}">
-      <span class="nom">${p.par.join('/')}<small>${p.version} · ${p.cerrada ? 'cerrada' : p.h.abierta ? fecha(p.h.abierta) : 'abierta'}</small></span>
+      <span class="nom">${esc(p.par.join('/'))}<small>${esc(p.version)} · ${p.cerrada ? 'cerrada' : p.h.abierta ? fecha(p.h.abierta) : 'abierta'}</small></span>
       <span class="barra"><span style="width:${Math.abs(val(p)) / max * 100}%;background:${val(p) < 0 ? 'var(--pierde)' : p.cerrada ? 'var(--gris2)' : 'var(--acento)'}"></span></span>
       <span class="val num ${colorPnl(medida === 'tarifas' ? 1 : val(p))}">${fmt(p)}</span>
     </button>`).join('') || '<span class="gris-t">Sin datos todavía</span>';
@@ -504,21 +591,22 @@ function pintarRanking(ps) {
   medida = m; ['pct', 'usd', 'tarifas'].forEach((k) => $('#m-' + k).setAttribute('aria-pressed', k === m)); pintar();
 }));
 
-function pintarTipos(ps, cs) {
-  const n = { liquidez: ps.length, billetera: cs.length, compra: (D.compras || []).length, staking: 0, prestamo: 0 };
+function pintarTipos(ps, cs, ls) {
+  const n = { liquidez: ps.length, billetera: cs.length, compra: (D.compras || []).length, staking: 0, prestamo: ls.length };
   $('#tipos').innerHTML = TIPOS.map((t) => `<button data-tipo="${t.id}" aria-pressed="${t.id === tipoActivo}">${t.e} ${t.n} <span class="n">${n[t.id]}</span></button>`).join('');
 }
 $('#tipos').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) { tipoActivo = b.dataset.tipo; pintar(); } });
 
 const vacio = (e, t, s) => `<div class="vacio"><span class="e">${e}</span><b>${t}</b><span>${s}</span></div>`;
-function pintarLista(ps, cs) {
+function pintarLista(ps, cs, ls) {
   const abiertos = new Set([...document.querySelectorAll('#lista details[open]')].map((d) => d.dataset.k));
   if (tipoActivo === 'billetera') {
     $('#lista').innerHTML = cs.map((c) => `
       <div class="cartera">
         <div class="c-cab"><span class="ico">👛</span>
           <div class="t-nom"><b>${esc(c.nombre)}</b><small>${esc(corta(c.dir))}${c.origen === 'criptohouse' ? ' · de CriptoHouse' : ''}</small></div>
-          <span class="tot num">${usd(c.total, 0)}</span></div>
+          <span class="tot num">${usd(c.total + ls.filter((l) => l.b.dir.toLowerCase() === c.dir.toLowerCase()).reduce((s, l) => s + l.vale, 0), 0)}</span></div>
+        ${ls.filter((l) => l.b.dir.toLowerCase() === c.dir.toLowerCase()).map(bloqueAave).join('')}
         ${c.toks.map((t) => `<div class="tok">${monedas([t.sym])}
           <div><b>${esc(t.sym)}</b><small>${esc(t.red)} · ${cant(t.cant, t.sym)}</small></div>
           <div class="der num"><b>${usd(t.valor)}</b><small class="${t.cambio == null || ESTABLE.test(t.sym) ? '' : t.cambio >= 0 ? 'gana-t' : 'pierde-t'}">${t.cambio == null || ESTABLE.test(t.sym) ? (t.usd ? 'a ' + usd(t.usd) : 'sin precio') : pct(t.cambio) + ' hoy'}</small></div></div>`).join('') || '<small class="gris-t">Vacía o leyendo…</small>'}
@@ -537,6 +625,24 @@ function pintarLista(ps, cs) {
     const c = D.compras || [];
     $('#lista').innerHTML = c.length ? c.map((x) => `<div class="tarjeta"><div class="t-cab">${monedas([x.token])}<div class="t-nom"><b>${esc(x.token)} · ${cant(x.cantidad, '')}</b><small>${fecha(x.fecha)} · a ${usd(x.precio)}</small></div></div></div>`).join('')
       : vacio('🪙', 'Compras sin apuntar', 'Mándame la captura de la compra (exchange o billetera) y la añado con fecha y precio.');
+    return;
+  }
+  if (tipoActivo === 'prestamo') {
+    $('#lista').innerHTML = ls.length ? ls.map((l) => `
+      <button class="tarjeta" data-id="${l.k}" aria-label="Ver ${nombreLoop(l)}">
+        <div class="t-cab">${monedas(l.x.puesto.map((t) => t.sym))}
+          <div class="t-nom"><b>${nombreLoop(l)}</b><small>👛 ${esc(l.b.nombre)} · ${esc(corta(l.b.dir))}</small></div>
+          ${chipSalud(l.hf)}
+        </div>
+        ${balanza(l)}
+        <div class="t-num">
+          <div><span>Tuyo</span><b class="num">${usd(l.vale, 0)}</b></div>
+          <div><span>Pusiste</span><b class="num">${l.puestoNeto == null ? '…' : usd(l.puestoNeto, 0)}</b></div>
+          <div><span>Ganancia</span><b class="num ${colorPnl(l.pnl)}">${l.pnl == null ? 'calculando…' : pct(l.pnlPct)}</b></div>
+        </div>
+      </button>
+      <details data-k="${l.k}" ${abiertos.has(l.k) ? 'open' : ''}><summary>📋 Datos de ${nombreLoop(l)}</summary>${tablaAave(l)}</details>`).join('')
+      : vacio('🏦', 'Sin préstamos', 'Cuando una billetera tenga algo en Aave, aparece aquí solo.');
     return;
   }
   if (tipoActivo !== 'liquidez') { const t = TIPOS.find((x) => x.id === tipoActivo); $('#lista').innerHTML = vacio(t.e, t.n + ' (vacío)', 'Cuando tengas una, aparece aquí.'); return; }
@@ -590,12 +696,73 @@ function tablaDatos(p) {
   return `<dl class="dl num">${f.map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join('')}</dl>`;
 }
 
+function tablaAave(l) {
+  const f = [
+    ['Billetera', `${esc(l.b.nombre)} · ${esc(corta(l.b.dir))}`],
+    ['Red', 'Aave v3 · ' + l.red],
+    ['Empezó', l.abierta ? fechaHora(l.abierta) : 'buscando…'],
+    ['Días', l.dias ?? '—'],
+    ...l.x.puesto.map((t) => ['Puesto ' + t.sym, `${cant(t.cant, t.sym)} · gana ${num(t.apy)} %`]),
+    ...l.x.debe.map((t) => ['Debes ' + t.sym, `${cant(t.cant, t.sym)} · pagas ${num(t.apy)} %`]),
+    ['Intereses al año', `${usdS(l.interesGana - l.interesPaga, 0)} (cobras ${usd(l.interesGana, 0)}, pagas ${usd(l.interesPaga, 0)})`],
+    ['Salud', l.hf == null ? 'sin deuda' : num(l.hf, 2) + ' (por debajo de 1 te liquidan)'],
+  ];
+  if (l.liq) f.push(['Te liquidan si ' + l.liq.sym + ' baja a', `${num(l.liq.precio, 0)} (−${num(l.liq.caida, 0)} %)`]);
+  if (l.puestoNeto != null) f.push(['Pusiste de tu bolsillo', usd(l.puestoNeto)]);
+  return `<dl class="dl num">${f.map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join('')}</dl>`;
+}
+function abrirAave(k) {
+  const l = prestamos().find((x) => x.k === k); if (!l) return;
+  const salud = l.hf == null ? 100 : Math.min(100, Math.max(0, (l.hf - 1) / 2 * 100));
+  const movs = [...l.movs].reverse();
+  $('#hoja').innerHTML = `
+    <div class="asa"></div>
+    <div class="h-cab">${monedas(l.x.puesto.map((t) => t.sym))}<h3>${nombreLoop(l)}</h3><button class="cerrar" id="cerrar" aria-label="Cerrar">✕</button></div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">${chipSalud(l.hf)}<span class="chip">🏦 Aave v3 · ${esc(l.red)}</span><span class="chip">👛 ${esc(l.b.nombre)} · ${esc(corta(l.b.dir))}</span></div>
+    <div class="caja">
+      <div class="pnl">
+        <div><span class="chip" style="margin-bottom:6px">Resultado si lo cierro ahora</span>
+          <div class="grande num ${colorPnl(l.pnl)}">${l.pnl == null ? '…' : usdS(l.pnl)}</div></div>
+        <b class="num ${colorPnl(l.pnl)}" style="font-size:20px">${l.pnl == null ? '' : pct(l.pnlPct)}</b>
+      </div>
+      <div class="flujo num">
+        <div class="paso"><small>Pusiste</small>${l.puestoNeto == null ? '…' : usd(l.puestoNeto, 0)}</div><span class="flecha">→</span>
+        <div class="paso"><small>Tienes dentro</small>${usd(l.col, 0)}</div><span class="flecha">−</span>
+        <div class="paso"><small>Debes</small>${usd(l.deuda, 0)}</div><span class="flecha">=</span>
+        <div class="paso"><small>Tuyo</small>${usd(l.vale, 0)}</div>
+      </div>
+    </div>
+    <div class="caja">
+      <span class="chip" style="align-self:flex-start">❤️ Salud ${l.hf == null ? '' : num(l.hf, 2)}</span>
+      <div class="salud"><i style="left:calc(${salud}% - 2px)"></i></div>
+      <div class="mini"><span>1 = te liquidan</span><span>3 = tranquila</span></div>
+      ${l.liq ? `<span class="chip aviso" style="align-self:flex-start">⚠️ Si ${esc(l.liq.sym)} baja a ${num(l.liq.precio, 0)} (−${num(l.liq.caida, 0)} %)</span>` : ''}
+    </div>
+    <div class="caja">
+      <div class="linea-t">
+        <div class="l"><span style="width:100%"></span></div>
+        <span class="p ini"></span><span class="p fin hoy"></span>
+        <span class="dias">${l.dias == null ? '…' : l.dias + ' días'}</span>
+        <span class="txt">🟢 ${l.abierta ? fecha(l.abierta) : '…'}</span>
+        <span class="txt der">⏳ Sigue abierto</span>
+      </div>
+    </div>
+    <details open><summary>📋 Todos los datos</summary>${tablaAave(l)}</details>
+    <details><summary>🧾 Movimientos (${l.movs.length})</summary>
+      <ul class="movs num">${movs.map((o) => `<li><small>${fecha(o.fecha)}</small><span>${MOV[o.tipo]?.[0] || '•'} ${MOV[o.tipo]?.[1] || o.tipo}${o.interno ? ' (con lo de dentro)' : ''} ${cant(o.cant, o.sym)}</span><b>${o.usd == null ? '' : usd(o.usd, 0)}</b></li>`).join('')}</ul></details>
+    <details><summary>ℹ️ Cómo se calcula</summary><p class="nota">«Pusiste» = lo que metiste y devolviste, menos lo que pediste y sacaste, cada cosa al precio de ese día. «Tuyo» = lo que tienes dentro menos lo que debes. Los premios cuentan como ganancia.</p></details>
+    <a class="enlace" href="https://app.aave.com/" target="_blank" rel="noopener">Abrir Aave ↗</a>
+    <a class="enlace" href="https://arbiscan.io/address/${esc(l.b.dir)}" target="_blank" rel="noopener">Ver la cuenta en Arbiscan ↗</a>`;
+  $('#velo').hidden = false; $('#cerrar').focus();
+}
+
 $('#ampliar').addEventListener('click', () => document.querySelectorAll('#lista details').forEach((d) => d.open = true));
 $('#resumir').addEventListener('click', () => document.querySelectorAll('#lista details').forEach((d) => d.open = false));
 
 /* ── 📄 Ficha de una pool ─────────────────────────── */
 document.addEventListener('click', (e) => { const b = e.target.closest('button[data-id]'); if (b) abrir(b.dataset.id); });
 function abrir(k) {
+  if (k.startsWith('aave:')) return abrirAave(k);
   const p = pools().find((x) => x.k === k); if (!p) return;
   const h = p.h;
   $('#hoja').innerHTML = `
@@ -638,7 +805,7 @@ $('#velo').addEventListener('click', (e) => { if (e.target.id === 'velo' || e.ta
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') $('#velo').hidden = true; });
 
 /* ── 💬 Preguntas ──────────────────────────────── */
-const SUG = ['¿Cuál rinde más?', '¿Cuánto tengo en total?', '¿Qué está fuera de rango?', '¿Cuándo compré Bitcoin?', '¿Qué he cerrado?'];
+const SUG = ['¿Cuál rinde más?', '¿Cuánto tengo en total?', '¿Cómo van mis loopings?', '¿Qué está fuera de rango?', '¿Cuándo compré Bitcoin?', '¿Qué he cerrado?'];
 $('#sugerencias').innerHTML = SUG.map((s) => `<button type="button">${s}</button>`).join('');
 $('#sugerencias').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) { $('#q').value = b.textContent; responder(b.textContent); } });
 $('#f-pregunta').addEventListener('submit', (e) => { e.preventDefault(); responder($('#q').value); });
@@ -663,8 +830,12 @@ function responder(q) {
   } else if (/total|cuanto|tengo|gano|ganancia|beneficio|perdid|resumen/.test(t)) {
     const enB = cs.reduce((s, c) => s + c.total, 0), enP = ab.reduce((s, p) => s + p.valor + p.tarifas, 0);
     const cd = ps.filter((p) => p.pnl != null), g = cd.reduce((s, p) => s + p.pnl, 0), dp = cd.reduce((s, p) => s + p.depositado, 0);
-    h = `<p>Tienes <b>${usd(enB + enP)}</b>: ${usd(enP, 0)} en ${ab.length} pools y ${usd(enB, 0)} en billeteras.</p>
+    const lsT = prestamos(), enA = lsT.reduce((s, l) => s + l.vale, 0);
+    h = `<p>Tienes <b>${usd(enB + enP + enA)}</b>: ${usd(enP, 0)} en ${ab.length} pools, ${usd(enB, 0)} en billeteras y ${usd(enA, 0)} tuyos en Aave.</p>
       <p>Con las pools llevas <b>${usdS(g)}</b> (${dp ? pct(g / dp * 100) : '—'}), contando las ya cerradas.</p>`;
+  } else if (/aave|prestamo|looping|deuda|debo|liquid|salud/.test(t)) {
+    const ls = prestamos();
+    h = ls.length ? `<ul>${ls.map((l) => `<li><b>${nombreLoop(l)}</b> (${esc(l.b.nombre)}): tuyo ${usd(l.vale, 0)}, debes ${usd(l.deuda, 0)}, salud ${l.hf ? num(l.hf, 2) : '—'}${l.liq ? `; te liquidan si ${l.liq.sym} baja a ${num(l.liq.precio, 0)}` : ''}. Resultado <b>${usdS(l.pnl, 0)}</b></li>`).join('')}</ul>` : '<p>No tienes nada en Aave.</p>';
   } else if (/rango|fuera|dentro/.test(t)) {
     const fu = ab.filter((p) => !p.dentro);
     h = fu.length ? `<p>🔴 Fuera de rango (ahora no cobran tarifas):</p><ul>${fu.map((p) => `<li>${nom(p)} — precio ${num(p.precio, 0)}, rango ${num(p.rango[0], 0)}–${num(p.rango[1], 0)}</li>`).join('')}</ul>`

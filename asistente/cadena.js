@@ -333,5 +333,89 @@
     return out;
   }
 
-  g.Cadena = { posicionesV3, idsV4, leerV4, leerV3, historial, saldos, precios, tipoDireccion, rpc, logs };
+  /* ── 🏦 Aave v3 (préstamos / looping) ── */
+  const AAVE = {
+    arbitrum: { pool: '0x794a61358d6845594f94dc1db02a252b5b4814ad', desde: 7742429 },
+    ethereum: { pool: '0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2', desde: 16291127 },
+    base: { pool: '0xa238dd80c259a72e81d7e4664a9801593f98d1c5', desde: 2357134 },
+    optimism: { pool: '0x794a61358d6845594f94dc1db02a252b5b4814ad', desde: 4365693 },
+    polygon: { pool: '0x794a61358d6845594f94dc1db02a252b5b4814ad', desde: 25824000 },
+    avalanche: { pool: '0x794a61358d6845594f94dc1db02a252b5b4814ad', desde: 11970506 },
+  };
+  const RAY = 1e27, anual = (r) => (Math.pow(1 + Number(r) / RAY / 31536000, 31536000) - 1) * 100;
+  const cacheRes = {};
+  async function reservasAave(red) {
+    if (cacheRes[red]) return cacheRes[red];
+    const pool = AAVE[red].pool;
+    const w = palabras(await llamar(red, pool, '0x' + sel('getReservesList()')));
+    const lista = w.slice(2, 2 + Number(w[1])).map(aDir);
+    return (cacheRes[red] = await Promise.all(lista.map(async (a) => {
+      const d = palabras(await llamar(red, pool, '0x' + sel('getReserveData(address)') + dir(a)));
+      return { a, conf: d[0], liqRate: d[2], borRate: d[4], aToken: aDir(d[8]), deuda: aDir(d[10]), tok: await token(red, a) };
+    })));
+  }
+  // Lo que tiene puesto y lo que debe AHORA en cada red
+  async function aave(owner) {
+    const out = [];
+    await Promise.all(Object.keys(AAVE).map(async (red) => {
+      try {
+        const c = palabras(await llamar(red, AAVE[red].pool, '0x' + sel('getUserAccountData(address)') + dir(owner)));
+        if (c[0] === 0n && c[1] === 0n) return;
+        const res = await reservasAave(red);
+        const puesto = [], debe = [];
+        await Promise.all(res.map(async (r) => {
+          const bal = async (t) => Number(BigInt(await llamar(red, t, '0x' + sel('balanceOf(address)') + dir(owner)))) / 10 ** r.tok.dec;
+          const [x, y] = await Promise.all([bal(r.aToken), bal(r.deuda)]);
+          const lt = Number((r.conf >> 16n) & 0xffffn) / 1e4;
+          if (x > 1e-9) puesto.push({ sym: r.tok.sym, cant: x, lt, apy: anual(r.liqRate), a: r.a });
+          if (y > 1e-9) debe.push({ sym: r.tok.sym, cant: y, apy: anual(r.borRate), a: r.a });
+        }));
+        out.push({ red, colUSD: Number(c[0]) / 1e8, deudaUSD: Number(c[1]) / 1e8, hf: c[1] === 0n ? null : Number(c[5]) / 1e18, puesto, debe });
+      } catch (e) {}
+    }));
+    return out;
+  }
+  // Todos los movimientos de una billetera en Aave (para saber cuándo empezó y cuánto puso de su bolsillo)
+  async function movimientosAave(red, owner, desdeBloque) {
+    const { pool } = AAVE[red], desde = desdeBloque || AAVE[red].desde, U = dir(owner).replace(/^/, '0x');
+    const ev = {
+      poner: ['Supply(address,address,address,uint256,uint16)', 1], pedir: ['Borrow(address,address,address,uint256,uint8,uint256,uint16)', 1],
+      devolver: ['Repay(address,address,address,uint256,bool)', 0], sacar: ['Withdraw(address,address,address,uint256)', 0],
+    };
+    const res = await reservasAave(red), porDir = {};
+    res.forEach((r) => { porDir[r.a] = r.tok; porDir[r.aToken] = r.tok; });
+    const out = [];
+    for (const [tipo, [firma, i]] of Object.entries(ev)) {
+      const l = await logs(red, { address: pool, topics: ['0x' + k(firma), null, U] }, desde);
+      l.forEach((x) => { const t = porDir[aDir(BigInt(x.topics[1]))]; if (!t) return;
+        const w = palabras(x.data);
+        // devolver usando lo que ya tenía puesto dentro: no sale dinero del bolsillo
+        out.push({ tipo, sym: t.sym, cant: Number(w[i]) / 10 ** t.dec, bloque: parseInt(x.blockNumber, 16), tx: x.transactionHash, ...(tipo === 'devolver' && w[1] === 1n ? { interno: true } : {}) }); });
+    }
+    // aTokens que llegan (premios) o se van a otra dirección, sin pasar por el banco
+    const cero = '0x' + '0'.repeat(64);
+    for (const r of res) {
+      for (const [tipo, topics] of [['premio', [EV.transfer, null, U]], ['enviar', [EV.transfer, U]]]) {
+        const l = await logs(red, { address: r.aToken, topics }, desde);
+        l.filter((x) => x.topics[1] !== cero && x.topics[2] !== cero && x.topics[1] !== x.topics[2])
+          .forEach((x) => out.push({ tipo, sym: r.tok.sym, cant: Number(BigInt(x.data)) / 10 ** r.tok.dec, bloque: parseInt(x.blockNumber, 16), tx: x.transactionHash }));
+      }
+    }
+    const limpio = out.sort((a, b) => a.bloque - b.bloque);
+    const fechas = {};
+    for (const b of [...new Set(limpio.map((o) => o.bloque))]) fechas[b] = await fechaBloque(red, b);
+    limpio.forEach((o) => { o.fecha = fechas[o.bloque]; });
+    return limpio;
+  }
+  // Precio de un día pasado (Binance guarda años; CoinGecko gratis solo uno)
+  const BINANCE = { WETH: 'ETHUSDT', ETH: 'ETHUSDT', WBTC: 'BTCUSDT', BTC: 'BTCUSDT', cbBTC: 'BTCUSDT', ARB: 'ARBUSDT', OP: 'OPUSDT', AAVE: 'AAVEUSDT', LINK: 'LINKUSDT', POL: 'POLUSDT', AVAX: 'AVAXUSDT', wstETH: 'ETHUSDT', weETH: 'ETHUSDT', rETH: 'ETHUSDT' };
+  async function precioPasado(sym, fechaISO) {
+    if (/^(USDC|USDC\.e|USDT|USDT0|DAI|xDAI|GHO|USDe|FRAX|LUSD)$/.test(sym)) return 1;
+    const par = BINANCE[sym] || sym.toUpperCase() + 'USDT', t = Date.parse(fechaISO);
+    const r = await fetch(`https://api.binance.com/api/v3/klines?symbol=${par}&interval=1h&startTime=${t - 3600e3}&limit=1`);
+    const j = await r.json();
+    return Array.isArray(j) && j[0] ? Number(j[0][4]) : null;
+  }
+
+  g.Cadena = { posicionesV3, idsV4, leerV4, leerV3, historial, saldos, precios, tipoDireccion, rpc, logs, aave, movimientosAave, precioPasado, AAVE };
 })(typeof window !== 'undefined' ? window : globalThis);
