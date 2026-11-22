@@ -503,6 +503,32 @@ function bloqueAave(l) {
   </button>`;
 }
 
+// 🪙 Cada vez que entró BTC o ETH: compras apuntadas + lo puesto en Aave (con el precio de ese día)
+const FAMILIA = { BTC: /^(WBTC|BTC|cbBTC|BTCB)$/, ETH: /^(WETH|ETH|weETH|wstETH|rETH)$/ };
+function entradas(token) {
+  const fam = FAMILIA[token], bs = billeteras();
+  const nombreDe = (d) => bs.find((b) => b.dir.toLowerCase() === d)?.nombre || corta(d);
+  const out = (D.compras || []).filter((c) => fam.test(c.token)).map((c) => ({ fecha: c.fecha, cant: c.cantidad, precio: c.precio, pagado: c.pagado ?? c.cantidad * c.precio, donde: c.origen || 'Compra', quien: c.billetera || '', nota: c.nota, exacto: true }));
+  for (const [k, h] of Object.entries(aaveHist)) {
+    const d = k.split('|')[0];
+    for (const o of h.movs || []) {
+      if (o.tipo !== 'poner' || !fam.test(o.sym) || !o.precio || o.usd < 20) continue;
+      const igual = out.some((c) => c.exacto && Math.abs(new Date(c.fecha) - new Date(o.fecha)) < 3 * 36e5 && Math.abs(c.cant - o.cant) / o.cant < 0.05);
+      if (!igual) out.push({ fecha: o.fecha, cant: o.cant, precio: o.precio, pagado: o.usd, donde: 'Puesto en Aave', quien: nombreDe(d), exacto: false });
+    }
+  }
+  return out.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+}
+function respuestaCompras(token) {
+  const fichas = (token ? [token] : ['BTC', 'ETH']).map((t) => {
+    const e = entradas(t); if (!e.length) return '';
+    const ahora = precioDe('W' + t), cant_ = e.reduce((s, x) => s + x.cant, 0), pag = e.reduce((s, x) => s + x.pagado, 0), medio = pag / cant_;
+    return `<p>🪙 <b>${t}</b>: ${e.length} entradas · precio medio <b>${num(medio, 0)}</b> · hoy ${num(ahora, 0)} (${pct((ahora / medio - 1) * 100)})</p>
+      <ul>${e.map((x) => `<li>${fecha(x.fecha)}: ${cant(x.cant, t)} a <b>${x.exacto ? '' : '≈'}${num(x.precio, 0)}</b> <span class="${colorPnl(ahora - x.precio)}">${pct((ahora / x.precio - 1) * 100)}</span></li>`).join('')}</ul>`;
+  }).join('');
+  return fichas + (fichas ? '<p><small>≈ = precio de ese día (lo puesto en Aave). Sin ≈ = precio exacto de tu compra.</small></p>' : '') || '<p>No encuentro compras apuntadas. Mándame la captura y las añado.</p>';
+}
+
 const pools = () => Object.values(pos).map(vista).sort((a, b) => a.cerrada - b.cerrada || new Date(b.h.abierta || 0) - new Date(a.h.abierta || 0));
 function carteras() {
   return billeteras().map((b) => {
@@ -592,7 +618,7 @@ function pintarRanking(ps, ls) {
 }));
 
 function pintarTipos(ps, cs, ls) {
-  const n = { liquidez: ps.length, billetera: cs.length, compra: (D.compras || []).length, staking: 0, prestamo: ls.length };
+  const n = { liquidez: ps.length, billetera: cs.length, compra: entradas('BTC').length + entradas('ETH').length, staking: 0, prestamo: ls.length };
   $('#tipos').innerHTML = TIPOS.map((t) => `<button data-tipo="${t.id}" aria-pressed="${t.id === tipoActivo}">${t.e} ${t.n} <span class="n">${n[t.id]}</span></button>`).join('');
 }
 $('#tipos').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) { tipoActivo = b.dataset.tipo; pintar(); } });
@@ -622,8 +648,12 @@ function pintarLista(ps, cs, ls) {
     return;
   }
   if (tipoActivo === 'compra') {
-    const c = D.compras || [];
-    $('#lista').innerHTML = c.length ? c.map((x) => `<div class="tarjeta"><div class="t-cab">${monedas([x.token])}<div class="t-nom"><b>${esc(x.token)} · ${cant(x.cantidad, '')}</b><small>${fecha(x.fecha)} · a ${usd(x.precio)}</small></div></div></div>`).join('')
+    const c = ['BTC', 'ETH'].flatMap((t) => entradas(t).map((x) => ({ ...x, t }))).sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+    const medio = (t) => { const e = c.filter((x) => x.t === t); if (!e.length) return ''; const m = e.reduce((s, x) => s + x.pagado, 0) / e.reduce((s, x) => s + x.cant, 0), ah = precioDe('W' + t);
+      return `<div class="tarjeta"><div class="t-cab">${monedas([t])}<div class="t-nom"><b>${t} · precio medio ${num(m, 0)}</b><small>hoy ${num(ah, 0)} · ${e.length} entradas</small></div><span class="chip ${ah >= m ? 'gana' : 'pierde'}">${pct((ah / m - 1) * 100)}</span></div></div>`; };
+    $('#lista').innerHTML = c.length ? medio('BTC') + medio('ETH') + c.map((x, i) => { const ah = precioDe('W' + x.t), g = (ah / x.precio - 1) * 100; return `
+      <details data-k="c${i}" ${abiertos.has('c' + i) ? 'open' : ''}><summary><span>${monedas([x.t])}</span><span style="flex:1;margin:0 10px;min-width:0"><b>${cant(x.cant, x.t)}</b> a ${x.exacto ? '' : '≈'}${num(x.precio, 0)}<br><small class="gris-t">${fecha(x.fecha)} · ${esc(x.quien || x.donde)}</small></span><span class="chip ${g >= 0 ? 'gana' : 'pierde'}">${pct(g)}</span></summary>
+        <dl class="dl num"><dt>Pagaste</dt><dd>${usd(x.pagado)}</dd><dt>Vale hoy</dt><dd>${usd(x.cant * ah)}</dd><dt>De dónde</dt><dd>${esc(x.donde)}</dd><dt>Precio</dt><dd>${x.exacto ? 'exacto' : 'el de ese día'}</dd></dl>${x.nota ? `<p class="nota">${esc(x.nota)}</p>` : ''}</details>`; }).join('')
       : vacio('🪙', 'Compras sin apuntar', 'Mándame la captura de la compra (exchange o billetera) y la añado con fecha y precio.');
     return;
   }
@@ -805,7 +835,7 @@ $('#velo').addEventListener('click', (e) => { if (e.target.id === 'velo' || e.ta
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') $('#velo').hidden = true; });
 
 /* ── 💬 Preguntas ──────────────────────────────── */
-const SUG = ['¿Cuál rinde más?', '¿Cuánto tengo en total?', '¿Cómo van mis loopings?', '¿Qué está fuera de rango?', '¿Cuándo compré Bitcoin?', '¿Qué he cerrado?'];
+const SUG = ['¿A cuánto compré Bitcoin?', '¿Cuál rinde más?', '¿Cuánto tengo en total?', '¿Cómo van mis loopings?', '¿Qué está fuera de rango?', '¿Qué he cerrado?'];
 $('#sugerencias').innerHTML = SUG.map((s) => `<button type="button">${s}</button>`).join('');
 $('#sugerencias').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) { $('#q').value = b.textContent; responder(b.textContent); } });
 $('#f-pregunta').addEventListener('submit', (e) => { e.preventDefault(); responder($('#q').value); });
@@ -816,12 +846,8 @@ function responder(q) {
   const nom = (p) => `<b>${nombrePool(p)}</b>`;
   const token = /btc|bitcoin/.test(t) ? 'BTC' : /eth|ether/.test(t) ? 'ETH' : null;
   let h;
-  if (/compr|cuando puse|cuando meti/.test(t)) {
-    const c = (D.compras || []).filter((x) => !token || x.token.includes(token));
-    h = c.length ? `<p>Compras${token ? ' de ' + token : ''}:</p><ul>${c.map((x) => `<li>${fecha(x.fecha)}: ${cant(x.cantidad, x.token)} a ${usd(x.precio)}</li>`).join('')}</ul>` : '';
-    const rel = ps.filter((p) => p.h.abierta && (!token || p.par[0].includes(token)));
-    if (rel.length) h += `<p>Lo que metiste en pools${token ? ' de ' + token : ''}:</p><ul>${rel.map((p) => `<li>${fecha(p.h.abierta)} — ${nom(p)}: ${puesto(p.h.puesto, p.par)} con ${p.par[0].slice(1)} a ${num(p.h.precioApertura, 0)}</li>`).join('')}</ul>`;
-    if (!c.length) h += `<p>🪙 Compras sueltas no tengo apuntadas. Mándame la captura y las añado.</p>`;
+  if (/compr|cuando puse|cuando meti|a cuanto|precio medio/.test(t) || (token && !/pool|rango|rinde/.test(t))) {
+    h = respuestaCompras(token);
   } else if (/rentab|rinde|mejor|peor|gana mas|ranking/.test(t)) {
     const pn = ps.filter((p) => p.pnlPct != null).sort((a, b) => b.pnlPct - a.pnlPct);
     const ta = ab.filter((p) => p.tarifasAnual != null).sort((a, b) => b.tarifasAnual - a.tarifasAnual);
