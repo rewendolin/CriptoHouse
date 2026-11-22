@@ -1,0 +1,43 @@
+# 🔔 Vigilante de la cartera: cada 10 minutos mira pools y Aave y avisa al móvil (ntfy).
+name: vigia
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+    inputs:
+      prueba:
+        description: 'Mandar un aviso de prueba'
+        type: boolean
+        default: false
+concurrency: vigia
+jobs:
+  mirar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: asistente
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Librería de huellas (la misma que usa la app)
+        run: curl -sfL https://cdnjs.cloudflare.com/ajax/libs/js-sha3/0.8.0/sha3.min.js -o asistente/sha3.min.js
+      - name: Recuperar lo ya avisado
+        uses: actions/cache/restore@v4
+        with:
+          path: asistente/vigia-estado.json
+          key: vigia-${{ github.run_id }}
+          restore-keys: vigia-
+      - name: Mirar y avisar
+        env:
+          CLAVE: ${{ secrets.CLAVE }}
+          NTFY_TEMA: ${{ secrets.NTFY_TEMA }}
+          PRUEBA: ${{ inputs.prueba && '1' || '' }}
+        run: node asistente/vigia.mjs
+      - name: Guardar lo ya avisado
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: asistente/vigia-estado.json
+          key: vigia-${{ github.run_id }}
