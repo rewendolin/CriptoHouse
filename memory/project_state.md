@@ -33,3 +33,9 @@
 
 - 23-nov 03:20: compra 0,03280483 WBTC (~2000 \$ de Conex) a ≈60.967, puesta en Aave (mucho). Salud Aave 1,78.
 - 23-nov 03:50: arreglado que el móvil con datos viejos guardados tapaba los «añadidos»; cadena.js con ?v= para no usar copia vieja.
+- 23-nov 11:40: pool 5783284 cerrada (09:47) → nueva 5783840 (mucho, 3.267,65 USDC, 09:49).
+  CAUSA de que no saliera en el móvil: (1) las llamadas a la cadena no tenían tiempo límite — si el móvil se dormía a medias,
+  la carga se quedaba colgada y `cargando` bloqueaba todas las siguientes; (2) si fallaba leer las pools de una billetera,
+  se daban TODAS por cerradas y no se veían las nuevas. Arreglo: corte a 15 s por nodo + 2 vueltas a los nodos, candado
+  de carga caduca a 2 min, reintento a los 20 s si algo falla, recarga al volver a la app, y una billetera que no se pudo
+  leer deja sus pools como estaban.

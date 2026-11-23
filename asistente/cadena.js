@@ -19,11 +19,16 @@
   };
   async function rpc(red, method, params) {
     let ultimo;
-    for (const url of RPCS[red]) {
+    for (const url of [...RPCS[red], ...RPCS[red]]) {
       try {
-        const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }) });
-        const j = await r.json();
+        // Si un nodo no contesta en 15 s se corta y se prueba el siguiente (antes se podía quedar colgado para siempre)
+        const corte = new AbortController(), reloj = setTimeout(() => corte.abort(), 15000);
+        let j;
+        try {
+          const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: corte.signal,
+            body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }) });
+          j = await r.json();
+        } finally { clearTimeout(reloj); }
         if (j.error) { ultimo = new Error(j.error.message); if (/range|beyond|head/i.test(j.error.message)) throw ultimo; continue; }
         return j.result;
       } catch (e) { ultimo = e; if (/range|beyond|head/i.test(e.message)) throw e; }

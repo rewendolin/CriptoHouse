@@ -262,7 +262,7 @@ a.enlace{color:var(--acento);font-weight:600;text-decoration:none}
 <div class="velo" id="velo" hidden><div class="hoja" id="hoja" role="dialog" aria-modal="true"></div></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/js-sha3/0.8.0/sha3.min.js"></script>
-<script src="cadena.js?v=20261123b"></script>
+<script src="cadena.js?v=20261123c"></script>
 <script>
 'use strict';
 const $ = (s) => document.querySelector(s);
@@ -292,7 +292,7 @@ const TIPOS = [
   { id: 'prestamo', e: '🏦', n: 'Préstamos (Aave)' },
 ];
 
-let D = null, pos = {}, hist = {}, saldos = {}, precios = {}, aaveVivo = {}, aaveHist = {}, cargando = false, ultimaCarga = null, vivo = false;
+let D = null, pos = {}, hist = {}, saldos = {}, precios = {}, aaveVivo = {}, aaveHist = {}, cargando = false, cargandoDesde = 0, ultimaCarga = null, vivo = false;
 let tipoActivo = 'liquidez', medida = 'pct';
 
 /* ── 🔐 Candado ─────────────────────────────────── */
@@ -360,21 +360,27 @@ function arrancar() {
   pintar();
   cargar();
   setInterval(() => { if (!document.hidden) cargar(); }, 90000);
+  // Al volver a la app (desde otra app o con la pantalla apagada) se recarga enseguida
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) cargar(); });
 }
 $('#refrescar').addEventListener('click', () => cargar());
 
 async function cargar() {
-  if (cargando) return;
-  cargando = true; $('#refrescar').classList.add('girando'); pintarCabecera();
+  // Si una carga anterior se quedó colgada (p. ej. el móvil se durmió a medias), no bloquea más de 2 min
+  if (cargando && Date.now() - cargandoDesde < 12e4) return;
+  cargando = true; cargandoDesde = Date.now(); $('#refrescar').classList.add('girando'); pintarCabecera();
   try {
     const bs = billeteras();
     const evm = bs.filter((b) => Cadena.tipoDireccion(b.dir) === 'EVM');
     const escaneo = leer('ch_asist_escaneo', true) || {};
-    const nuevas = {};
+    const nuevas = {}, fallidas = new Set();
+    let fallo = false;
     // 💧 Pools
     await Promise.all(evm.map(async (b) => {
-      const v3 = await Cadena.posicionesV3(b.dir).catch(() => []);
-      v3.forEach((p) => { p.dueño = b.dir; nuevas['v3-' + p.id] = p; });
+      // Si falla la lectura NO se dan por cerradas sus pools: se apunta el fallo y se reintenta
+      const v3 = await Cadena.posicionesV3(b.dir).catch(() => null);
+      if (v3) v3.forEach((p) => { p.dueño = b.dir; nuevas['v3-' + p.id] = p; });
+      else { fallidas.add(b.dir.toLowerCase()); fallo = true; }
       const conocidos = Object.values(pos).filter((p) => p.version === 'v4' && p.dueño?.toLowerCase() === b.dir.toLowerCase()).map((p) => p.id);
       const desde = escaneo[b.dir.toLowerCase()] || D.escaneo?.v4Desde || 470000000;
       const hasta = Number(await Cadena.rpc('arbitrum', 'eth_blockNumber', []));
@@ -384,11 +390,13 @@ async function cargar() {
         encontrados.forEach((x) => { if (!hist['v4-' + x.id]) hist['_pista_v4-' + x.id] = x; });
       }
       const ids = [...new Set([...conocidos, ...(encontrados || []).map((x) => x.id)])];
-      const v4 = await Promise.all(ids.map((id) => Cadena.leerV4(id).catch(() => null)));
+      if (!encontrados) fallo = true;
+      const v4 = await Promise.all(ids.map((id) => Cadena.leerV4(id).catch(() => { fallidas.add(b.dir.toLowerCase()); fallo = true; return null; })));
       v4.filter(Boolean).forEach((p) => { p.dueño = b.dir; nuevas['v4-' + p.id] = p; });
     }));
     // las que ya no salen (quemadas) se quedan como estaban, marcadas cerradas
-    for (const [k, p] of Object.entries(pos)) if (!nuevas[k]) nuevas[k] = { ...p, activa: false };
+    // las que ya no salen (quemadas) se marcan cerradas — salvo si su billetera no se pudo leer: entonces se dejan como estaban
+    for (const [k, p] of Object.entries(pos)) if (!nuevas[k]) nuevas[k] = fallidas.has((p.dueño || '').toLowerCase()) ? p : { ...p, activa: false };
     for (const p of Object.values(nuevas)) delete p._raw;
     pos = nuevas;
     guardar('ch_asist_escaneo', escaneo);
@@ -412,7 +420,9 @@ async function cargar() {
     completarHistorial();
     completarAñadidos();
     completarAave();
+    if (fallo) setTimeout(() => cargar(), 20000);   // algo no contestó: otro intento en 20 s
   } catch (e) {
+    setTimeout(() => cargar(), 30000);
     vivo = false;
   } finally {
     cargando = false; $('#refrescar').classList.remove('girando'); pintarCabecera();
