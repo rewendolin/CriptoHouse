@@ -30,3 +30,5 @@
 - Pool 5783284 (mucho): +1000,13 USDC el 23-nov 01:27 → puesto total 3.267 $.
 - v4: aún no se miran los añadidos (las v4 activas no han recibido más).
 - Caja de preguntas probada en navegador: responde bien.
+
+- 23-nov 03:20: compra 0,03280483 WBTC (~2000 \$ de Conex) a ≈60.967, puesta en Aave (mucho). Salud Aave 1,78.
