@@ -404,6 +404,7 @@ async function cargar() {
     guardar('ch_asist_cache', { t: ultimaCarga, foto: Object.values(pos), saldos, precios, aave: aaveVivo });
     pintar();
     completarHistorial();
+    completarAñadidos();
     completarAave();
   } catch (e) {
     vivo = false;
@@ -425,6 +426,33 @@ async function completarHistorial() {
       guardar('ch_asist_hist', guardado); pintar();
     } catch (e) {}
   }
+}
+
+// ➕ Pools abiertas: ¿has metido más dinero después de abrirlas? (mira como mucho cada 30 min)
+let añadOcupado = false;
+async function completarAñadidos() {
+  if (añadOcupado) return; añadOcupado = true;
+  const guardado = leer('ch_asist_hist', true) || {};
+  try {
+    for (const [k, p] of Object.entries(pos)) {
+      const h = hist[k];
+      if (p.version !== 'v3' || !p.activa || !h || !h.abierta || Date.now() - (h.añadMirado || 0) < 18e5) continue;
+      try {
+        const hasta = Number(await Cadena.rpc('arbitrum', 'eth_blockNumber', []));
+        const vivoP = await Cadena.leerV3(BigInt(p.id), p.dueño);
+        const desde = (h.añadHasta || h.bloqueApertura || D.escaneo?.v3Desde || 20_000_000) + 1;
+        const nuevos = await Cadena.añadidosV3(vivoP, desde, h.txApertura || h.tx);
+        const ya = new Set((h.añadidos || []).map((x) => x.tx));
+        for (const o of nuevos) {
+          if (ya.has(o.tx)) continue;
+          const pr = o.x ? await Cadena.precioPasado(p.par[0], o.fecha).catch(() => precioDe(p.par[0])) : 0;
+          o.usd = +(o.x * pr + o.y).toFixed(2);
+        }
+        hist[k] = { ...h, añadidos: [...(h.añadidos || []), ...nuevos.filter((o) => !ya.has(o.tx))], añadHasta: hasta, añadMirado: Date.now() };
+        guardado[k] = hist[k]; guardar('ch_asist_hist', guardado); pintar();
+      } catch (e) {}
+    }
+  } finally { añadOcupado = false; }
 }
 
 // Aave: trae solo los movimientos nuevos (como mucho cada 30 min) y les pone el precio de ese día
@@ -453,7 +481,8 @@ const precioDe = (sym) => ESTABLE.test(sym) ? 1 : precios[sym]?.usd ?? Object.va
 function vista(p) {
   const k = p.version + '-' + p.id, h = hist[k] || {};
   const cerrada = !p.activa;
-  const o = { ...p, k, h, cerrada, depositado: h.depositado ?? null };
+  const extra = (h.añadidos || []).reduce((t, x) => t + (x.usd || 0), 0);
+  const o = { ...p, k, h, cerrada, depositado: h.depositado == null ? null : h.depositado + extra };
   if (cerrada) {
     o.valor = h.retiradoUSD ?? (h.retirado ? h.retirado.x * (precioDe(p.par[0]) ?? p.precio) + h.retirado.y : null);
     o.tarifas = null;
@@ -732,7 +761,8 @@ function tablaDatos(p) {
     ['Rango', `${num(p.rango[0])} → ${num(p.rango[1])}`],
     ['Cuenta', `${esc(nombreCuenta(p.dueño || '', '—'))} · ${esc(corta(p.dueño || ''))}`],
     ['Pusiste', puesto(h.puesto, p.par)],
-    ['Valor al poner', usd(p.depositado)],
+    ...(h.añadidos || []).map((x) => ['➕ Añadiste ' + fecha(x.fecha), puesto(x, p.par) + ' (' + usd(x.usd, 0) + ')']),
+    ['Valor al poner' + (h.añadidos?.length ? ' (total)' : ''), usd(p.depositado)],
     ['Precio al abrir', h.precioApertura ? num(h.precioApertura) : '—'],
   ];
   if (!p.cerrada) {

@@ -235,6 +235,18 @@
     }
     return out;
   }
+  // ➕ Liquidez añadida DESPUÉS de abrir (v3): cada vez que se metió más dinero en la misma pool
+  async function añadidosV3(pos, desdeBloque, txApertura) {
+    const r = pos._raw, flip = pos.par[0] !== nombre(r.T0.sym);
+    const ls = await logs('arbitrum', { address: UNI.v3npm, topics: [EV.v3inc, '0x' + uint(r.id)] }, desdeBloque);
+    const out = [];
+    for (const l of ls) {
+      if (txApertura && l.transactionHash.toLowerCase() === txApertura.toLowerCase()) continue;
+      const w = palabras(l.data), a0 = Number(w[1]) / 10 ** r.T0.dec, a1 = Number(w[2]) / 10 ** r.T1.dec;
+      out.push({ fecha: await fechaBloque('arbitrum', Number(BigInt(l.blockNumber))), x: flip ? a1 : a0, y: flip ? a0 : a1, tx: l.transactionHash, b: Number(BigInt(l.blockNumber)) });
+    }
+    return out;
+  }
   // Suma lo que salió y entró en la billetera de cada token en una operación
   function movimientos(rc, owner, r) {
     const o = '0x' + dir(owner);
@@ -417,5 +429,5 @@
     return Array.isArray(j) && j[0] ? Number(j[0][4]) : null;
   }
 
-  g.Cadena = { posicionesV3, idsV4, leerV4, leerV3, historial, saldos, precios, tipoDireccion, rpc, logs, aave, movimientosAave, precioPasado, AAVE };
+  g.Cadena = { añadidosV3, posicionesV3, idsV4, leerV4, leerV3, historial, saldos, precios, tipoDireccion, rpc, logs, aave, movimientosAave, precioPasado, AAVE };
 })(typeof window !== 'undefined' ? window : globalThis);

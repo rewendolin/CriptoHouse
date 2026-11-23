@@ -24,3 +24,9 @@
 - 22-nov: el vigilante corre en el MAC (launchd com.glenda.cartera-vigia, cada 10 min, carpeta ~/.cartera-vigia: baja vigia.mjs/cadena.js/datos.enc.json de GitHub Pages; claves en ~/.cartera-vigia/env). Solo avisa con el Mac encendido. Para 24 h: falta que Glenda autorice 'workflow' en GitHub (cuenta rewendolin) y subir .github/workflows/vigia.yml (está en local sin subir).
 - 22-nov 17:45: vigilante YA en GitHub Actions (cada ~10 min, 24 h). Copia del Mac apagada y borrada. Prueba enviada a ntfy OK.
 - 22-nov 17:45: compras WBTC apuntadas (0,0048 con USDC de Base ≈61.0k; 0,01628 con préstamo Aave 1000 USDC a 61.426). datos.json → noEsCompra: txs de Aave que no son compras (p. ej. meter WBTC que ya tenía).
+
+## 23-nov-2026 — Liquidez añadida a pools abiertas
+- La app ya cuenta el dinero que se mete DESPUÉS de abrir una pool v3 (eventos IncreaseLiquidity): `Cadena.añadidosV3` + `completarAñadidos()` (cada 30 min), guardado en `hist[k].añadidos`.
+- Pool 5783284 (mucho): +1000,13 USDC el 23-nov 01:27 → puesto total 3.267 $.
+- v4: aún no se miran los añadidos (las v4 activas no han recibido más).
+- Caja de preguntas probada en navegador: responde bien.
