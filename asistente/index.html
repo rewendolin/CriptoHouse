@@ -262,7 +262,7 @@ a.enlace{color:var(--acento);font-weight:600;text-decoration:none}
 <div class="velo" id="velo" hidden><div class="hoja" id="hoja" role="dialog" aria-modal="true"></div></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/js-sha3/0.8.0/sha3.min.js"></script>
-<script src="cadena.js"></script>
+<script src="cadena.js?v=20261123b"></script>
 <script>
 'use strict';
 const $ = (s) => document.querySelector(s);
@@ -350,7 +350,13 @@ function arrancar() {
   saldos = fuente.saldos || {}; precios = fuente.precios || {}; aaveVivo = fuente.aave || D.fotoAave || {}; ultimaCarga = fuente.t;
   aaveHist = { ...(D.aave || {}) };
   for (const [k, v] of Object.entries(leer('ch_asist_aave', true) || {})) if (!aaveHist[k] || v.hasta > aaveHist[k].hasta) aaveHist[k] = v;
-  hist = { ...(D.historial || {}), ...(leer('ch_asist_hist', true) || {}) };
+  // Mezcla lo que trae el fichero con lo que guardó el móvil, sin perder los «añadidos» de ninguno
+  hist = { ...(D.historial || {}) };
+  for (const [k, v] of Object.entries(leer('ch_asist_hist', true) || {})) {
+    const f = hist[k] || {}, todos = [...(f.añadidos || []), ...(v.añadidos || [])];
+    const añadidos = todos.filter((x, i) => todos.findIndex((y) => y.tx.toLowerCase() === x.tx.toLowerCase()) === i);
+    hist[k] = { ...f, ...v, ...(añadidos.length ? { añadidos } : {}) };
+  }
   pintar();
   cargar();
   setInterval(() => { if (!document.hidden) cargar(); }, 90000);

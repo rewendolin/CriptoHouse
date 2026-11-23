@@ -32,3 +32,4 @@
 - Caja de preguntas probada en navegador: responde bien.
 
 - 23-nov 03:20: compra 0,03280483 WBTC (~2000 \$ de Conex) a ≈60.967, puesta en Aave (mucho). Salud Aave 1,78.
+- 23-nov 03:50: arreglado que el móvil con datos viejos guardados tapaba los «añadidos»; cadena.js con ?v= para no usar copia vieja.
