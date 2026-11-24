@@ -262,7 +262,7 @@ a.enlace{color:var(--acento);font-weight:600;text-decoration:none}
 <div class="velo" id="velo" hidden><div class="hoja" id="hoja" role="dialog" aria-modal="true"></div></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/js-sha3/0.8.0/sha3.min.js"></script>
-<script src="cadena.js?v=20261123c"></script>
+<script src="cadena.js?v=20261124a"></script>
 <script>
 'use strict';
 const $ = (s) => document.querySelector(s);
@@ -292,6 +292,17 @@ const TIPOS = [
   { id: 'prestamo', e: '🏦', n: 'Préstamos (Aave)' },
 ];
 
+const VERSION = '20261124a';   // ⚠️ cambiarla en cada subida (y la de cadena.js?v=) para que los móviles se actualicen solos
+// Si la app del móvil lleva días abierta con el programa viejo, al volver a ella mira si hay versión nueva y se recarga
+async function mirarVersion() {
+  try {
+    const t = await (await fetch('./?nv=' + Date.now(), { cache: 'no-store' })).text();
+    const v = t.match(/const VERSION = '([^']+)'/)?.[1];
+    // solo si es MÁS nueva y como mucho una vez cada 5 min (así nunca entra en bucle)
+    let ult = 0; try { ult = +sessionStorage.getItem('ch_recarga') || 0; } catch (e) {}
+    if (v && v > VERSION && Date.now() - ult > 3e5) { try { sessionStorage.setItem('ch_recarga', Date.now()); } catch (e) {} location.reload(); }
+  } catch (e) {}
+}
 let D = null, pos = {}, hist = {}, saldos = {}, precios = {}, aaveVivo = {}, aaveHist = {}, cargando = false, cargandoDesde = 0, ultimaCarga = null, vivo = false;
 let tipoActivo = 'liquidez', medida = 'pct';
 
@@ -354,14 +365,15 @@ function arrancar() {
   hist = { ...(D.historial || {}) };
   for (const [k, v] of Object.entries(leer('ch_asist_hist', true) || {})) {
     const f = hist[k] || {}, todos = [...(f.añadidos || []), ...(v.añadidos || [])];
-    const añadidos = todos.filter((x, i) => todos.findIndex((y) => y.tx.toLowerCase() === x.tx.toLowerCase()) === i);
+    const añadidos = todos.filter((x, i) => todos.findIndex((y) => y.tx.toLowerCase() === x.tx.toLowerCase() && (y.tipo || 'mas') === (x.tipo || 'mas')) === i);
     hist[k] = { ...f, ...v, ...(añadidos.length ? { añadidos } : {}) };
   }
   pintar();
   cargar();
   setInterval(() => { if (!document.hidden) cargar(); }, 90000);
   // Al volver a la app (desde otra app o con la pantalla apagada) se recarga enseguida
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) cargar(); });
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) { mirarVersion(); cargar(); } });
+  mirarVersion();
 }
 $('#refrescar').addEventListener('click', () => cargar());
 
@@ -449,22 +461,26 @@ let añadOcupado = false;
 async function completarAñadidos() {
   if (añadOcupado) return; añadOcupado = true;
   const guardado = leer('ch_asist_hist', true) || {};
+  const clave = (x) => x.tx.toLowerCase() + (x.tipo || 'mas');
   try {
     for (const [k, p] of Object.entries(pos)) {
       const h = hist[k];
-      if (p.version !== 'v3' || !p.activa || !h || !h.abierta || Date.now() - (h.añadMirado || 0) < 18e5) continue;
+      if (p.version !== 'v3' || !h || !h.abierta) continue;
+      // abiertas: cada 5 min · cerradas: una sola vez, cuando ya se sabe la fecha de cierre
+      if (p.activa ? Date.now() - (h.añadMirado || 0) < 3e5 : (h.añadCompleto || !h.txCierre)) continue;
       try {
-        const hasta = Number(await Cadena.rpc('arbitrum', 'eth_blockNumber', []));
         const vivoP = await Cadena.leerV3(BigInt(p.id), p.dueño);
-        const desde = (h.añadHasta || h.bloqueApertura || D.escaneo?.v3Desde || 20_000_000) + 1;
-        const nuevos = await Cadena.añadidosV3(vivoP, desde, h.txApertura || h.tx);
-        const ya = new Set((h.añadidos || []).map((x) => x.tx));
-        for (const o of nuevos) {
-          if (ya.has(o.tx)) continue;
+        let hasta = Number(await Cadena.rpc('arbitrum', 'eth_blockNumber', [])), tope;
+        if (!p.activa) { const rc = await Cadena.rpc('arbitrum', 'eth_getTransactionReceipt', [h.txCierre]); tope = Number(BigInt(rc.blockNumber)); hasta = tope; }
+        const desde = (p.activa && h.añadHasta ? h.añadHasta : h.bloqueApertura || D.escaneo?.v3Desde || 20_000_000) + 1;
+        const nuevos = await Cadena.añadidosV3(vivoP, desde, h.txApertura || h.tx, tope, h.txCierre);
+        const ya = new Set((h.añadidos || []).map(clave));
+        const frescos = nuevos.filter((o) => !ya.has(clave(o)));
+        for (const o of frescos) {
           const pr = o.x ? await Cadena.precioPasado(p.par[0], o.fecha).catch(() => precioDe(p.par[0])) : 0;
           o.usd = +(o.x * pr + o.y).toFixed(2);
         }
-        hist[k] = { ...h, añadidos: [...(h.añadidos || []), ...nuevos.filter((o) => !ya.has(o.tx))], añadHasta: hasta, añadMirado: Date.now() };
+        hist[k] = { ...h, añadidos: [...(h.añadidos || []), ...frescos], añadHasta: hasta, añadMirado: Date.now(), ...(p.activa ? {} : { añadCompleto: true }) };
         guardado[k] = hist[k]; guardar('ch_asist_hist', guardado); pintar();
       } catch (e) {}
     }
@@ -631,7 +647,7 @@ function pintarCabecera() {
     return p ? `<span class="chip ${c == null ? '' : c >= 0 ? 'gana' : 'pierde'}">${s.slice(1)} ${num(p, 0)}${c != null ? ' ' + signo(c) + num(Math.abs(c), 1) + '%' : ''}</span>` : '';
   }).join('');
   const est = cargando ? '<span class="chip aviso">leyendo…</span>'
-    : vivo ? `<span class="chip gana">● ${hora(ultimaCarga)}</span>` : `<span class="chip aviso">sin conexión</span>`;
+    : vivo ? `<span class="chip gana" title="Versión ${VERSION}">● ${hora(ultimaCarga)}</span>` : `<span class="chip aviso">sin conexión</span>`;
   $('#precios').innerHTML = chips + est;
 }
 
@@ -777,8 +793,8 @@ function tablaDatos(p) {
     ['Rango', `${num(p.rango[0])} → ${num(p.rango[1])}`],
     ['Cuenta', `${esc(nombreCuenta(p.dueño || '', '—'))} · ${esc(corta(p.dueño || ''))}`],
     ['Pusiste', puesto(h.puesto, p.par)],
-    ...(h.añadidos || []).map((x) => ['➕ Añadiste ' + fecha(x.fecha), puesto(x, p.par) + ' (' + usd(x.usd, 0) + ')']),
-    ['Valor al poner' + (h.añadidos?.length ? ' (total)' : ''), usd(p.depositado)],
+    ...(h.añadidos || []).map((x) => x.tipo === 'menos' ? ['➖ Sacaste ' + fecha(x.fecha), puesto({ x: -x.x, y: -x.y }, p.par) + ' (' + usd(-x.usd, 0) + ')'] : ['➕ Añadiste ' + fecha(x.fecha), puesto(x, p.par) + ' (' + usd(x.usd, 0) + ')']),
+    ['Puesto en total' + (h.añadidos?.length ? ' (con lo añadido y sacado)' : ''), usd(p.depositado)],
     ['Precio al abrir', h.precioApertura ? num(h.precioApertura) : '—'],
   ];
   if (!p.cerrada) {

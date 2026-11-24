@@ -241,16 +241,22 @@
     return out;
   }
   // ➕ Liquidez añadida DESPUÉS de abrir (v3): cada vez que se metió más dinero en la misma pool
-  async function añadidosV3(pos, desdeBloque, txApertura) {
+  // ➕➖ Dinero metido o sacado DESPUÉS de abrir y ANTES de cerrar (v3). Lo sacado va en negativo.
+  async function añadidosV3(pos, desdeBloque, txApertura, hastaBloque, txCierre) {
     const r = pos._raw, flip = pos.par[0] !== nombre(r.T0.sym);
-    const ls = await logs('arbitrum', { address: UNI.v3npm, topics: [EV.v3inc, '0x' + uint(r.id)] }, desdeBloque);
+    const tema = '0x' + uint(r.id), fuera = [txApertura, txCierre].filter(Boolean).map((t) => t.toLowerCase());
+    const [mas, menos] = await Promise.all([
+      logs('arbitrum', { address: UNI.v3npm, topics: [EV.v3inc, tema] }, desdeBloque, hastaBloque),
+      logs('arbitrum', { address: UNI.v3npm, topics: [EV.v3dec, tema] }, desdeBloque, hastaBloque),
+    ]);
     const out = [];
-    for (const l of ls) {
-      if (txApertura && l.transactionHash.toLowerCase() === txApertura.toLowerCase()) continue;
-      const w = palabras(l.data), a0 = Number(w[1]) / 10 ** r.T0.dec, a1 = Number(w[2]) / 10 ** r.T1.dec;
-      out.push({ fecha: await fechaBloque('arbitrum', Number(BigInt(l.blockNumber))), x: flip ? a1 : a0, y: flip ? a0 : a1, tx: l.transactionHash, b: Number(BigInt(l.blockNumber)) });
+    for (const [l, signo] of [...mas.map((l) => [l, 1]), ...menos.map((l) => [l, -1])]) {
+      if (fuera.includes(l.transactionHash.toLowerCase())) continue;
+      const w = palabras(l.data), a0 = signo * Number(w[1]) / 10 ** r.T0.dec, a1 = signo * Number(w[2]) / 10 ** r.T1.dec;
+      if (!a0 && !a1) continue;   // solo cobro de tarifas, no cambia lo puesto
+      out.push({ fecha: await fechaBloque('arbitrum', Number(BigInt(l.blockNumber))), tipo: signo > 0 ? 'mas' : 'menos', x: flip ? a1 : a0, y: flip ? a0 : a1, tx: l.transactionHash, b: Number(BigInt(l.blockNumber)) });
     }
-    return out;
+    return out.sort((a, b) => a.b - b.b);
   }
   // Suma lo que salió y entró en la billetera de cada token en una operación
   function movimientos(rc, owner, r) {

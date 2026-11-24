@@ -39,3 +39,8 @@
   se daban TODAS por cerradas y no se veían las nuevas. Arreglo: corte a 15 s por nodo + 2 vueltas a los nodos, candado
   de carga caduca a 2 min, reintento a los 20 s si algo falla, recarga al volver a la app, y una billetera que no se pudo
   leer deja sus pools como estaban.
+- 24-nov: pools nuevas 5784369 y 5784371 (mucho); 5783840 cerrada 23-nov 17:11.
+  Nuevo: la app cuenta también lo SACADO a medias de una pool abierta (DecreaseLiquidity) → `añadidos` con tipo 'menos'.
+  Revisa abiertas cada 5 min (antes 30). Las cerradas se repasan una vez.
+  Móvil con programa viejo: `VERSION` en index.html + `mirarVersion()` recarga sola si hay una más nueva.
+  ⚠️ En cada subida de código: subir VERSION y el ?v= de cadena.js.
