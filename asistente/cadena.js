@@ -435,9 +435,14 @@
   async function precioPasado(sym, fechaISO) {
     if (/^(USDC|USDC\.e|USDT|USDT0|DAI|xDAI|GHO|USDe|FRAX|LUSD)$/.test(sym)) return 1;
     const par = BINANCE[sym] || sym.toUpperCase() + 'USDT', t = Date.parse(fechaISO);
-    const r = await fetch(`https://api.binance.com/api/v3/klines?symbol=${par}&interval=1h&startTime=${t - 3600e3}&limit=1`);
-    const j = await r.json();
-    return Array.isArray(j) && j[0] ? Number(j[0][4]) : null;
+    // Binance a veces bloquea según el país: se prueba su copia pública, luego la normal y luego la de EE. UU.
+    for (const host of ['https://data-api.binance.vision', 'https://api.binance.com', 'https://api.binance.us']) {
+      try {
+        const j = await (await fetch(`${host}/api/v3/klines?symbol=${par}&interval=1h&startTime=${t - 3600e3}&limit=1`)).json();
+        if (Array.isArray(j) && j[0]) return Number(j[0][4]);
+      } catch (e) {}
+    }
+    return null;
   }
 
   g.Cadena = { añadidosV3, posicionesV3, idsV4, leerV4, leerV3, historial, saldos, precios, tipoDireccion, rpc, logs, aave, movimientosAave, precioPasado, AAVE };

@@ -262,7 +262,7 @@ a.enlace{color:var(--acento);font-weight:600;text-decoration:none}
 <div class="velo" id="velo" hidden><div class="hoja" id="hoja" role="dialog" aria-modal="true"></div></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/js-sha3/0.8.0/sha3.min.js"></script>
-<script src="cadena.js?v=20261124a"></script>
+<script src="cadena.js?v=20261124b"></script>
 <script>
 'use strict';
 const $ = (s) => document.querySelector(s);
@@ -292,7 +292,7 @@ const TIPOS = [
   { id: 'prestamo', e: '🏦', n: 'Préstamos (Aave)' },
 ];
 
-const VERSION = '20261124a';   // ⚠️ cambiarla en cada subida (y la de cadena.js?v=) para que los móviles se actualicen solos
+const VERSION = '20261124b';   // ⚠️ cambiarla en cada subida (y la de cadena.js?v=) para que los móviles se actualicen solos
 // Si la app del móvil lleva días abierta con el programa viejo, al volver a ella mira si hay versión nueva y se recarga
 async function mirarVersion() {
   try {
@@ -500,6 +500,8 @@ async function completarAave() {
       try {
         const hasta = Number(await Cadena.rpc(x.red, 'eth_blockNumber', []));
         const nuevos = await Cadena.movimientosAave(x.red, d, h ? h.hasta + 1 : null);
+        // los que se quedaron sin precio (la fuente falló aquel día) se vuelven a intentar
+        for (const o of h?.movs || []) if (o.precio == null) { o.precio = await Cadena.precioPasado(o.sym, o.fecha).catch(() => null); o.usd = o.precio == null ? null : +(o.cant * o.precio).toFixed(2); }
         for (const o of nuevos) { o.precio = await Cadena.precioPasado(o.sym, o.fecha).catch(() => null); o.usd = o.precio == null ? null : +(o.cant * o.precio).toFixed(2); o.b = o.bloque; delete o.bloque; }
         aaveHist[k] = { hasta, mirado: Date.now(), movs: [...(h?.movs || []), ...nuevos] };
         guardado[k] = aaveHist[k]; guardar('ch_asist_aave', guardado); pintar();

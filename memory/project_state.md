@@ -44,3 +44,5 @@
   Revisa abiertas cada 5 min (antes 30). Las cerradas se repasan una vez.
   Móvil con programa viejo: `VERSION` en index.html + `mirarVersion()` recarga sola si hay una más nueva.
   ⚠️ En cada subida de código: subir VERSION y el ?v= de cadena.js.
+- 24-nov 19:40: compras WBTC apuntadas: 23-nov 80 USDC→0,00128416 (62.298); 24-nov 0,01670308 traído de otra red (≈59.787, aprox.); 24-nov 1000 USDC préstamo Aave→0,01664051 (60.095). Depósito Aave 0,01802797 (18:20) en noEsCompra.
+  Binance bloquea según país → precioPasado prueba data-api.binance.vision, api.binance.com y api.binance.us. Movs de Aave sin precio se reintentan.
