@@ -47,3 +47,4 @@
 - 24-nov 19:40: compras WBTC apuntadas: 23-nov 80 USDC→0,00128416 (62.298); 24-nov 0,01670308 traído de otra red (≈59.787, aprox.); 24-nov 1000 USDC préstamo Aave→0,01664051 (60.095). Depósito Aave 0,01802797 (18:20) en noEsCompra.
   Binance bloquea según país → precioPasado prueba data-api.binance.vision, api.binance.com y api.binance.us. Movs de Aave sin precio se reintentan.
 - 24-nov 20:20: la compra de 11:57 (0,01670308 WBTC) eran 1000 USDT desde Rabby → precio 59.869,5 (corregido).
+- 24-nov 20:30: arreglado % disparatado (+187M%) de la pool 5783840: el cierre se contaba como "sacado a medias". Iconos MetaMask/Rabby por cuenta (APP_CUENTA: mucho=MetaMask, resto Rabby).
