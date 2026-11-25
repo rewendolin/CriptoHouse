@@ -52,3 +52,4 @@
   5255374 WETH/USDC (fee 0,01 %) y 5255427 WBTC/USDC (0,05 %), abiertas 30-ene-2026.
   Estudio guardado en datos.json → `estudioPools` (rango, ancho, tarifas cobradas+pendientes, % anual, resultado, comparación con "quedarse quieto").
   `cobradoUSD` es una foto del 25-nov (no se recalcula sola).
+- 25-nov 21:55: direcciones cortas al estilo Rabby (0x72...1fbB, con mayúsculas de control). Cuenta «Rabby 7482» (0x7482…7A00) añadida: vacía, sin movimientos en ninguna red.
