@@ -53,3 +53,4 @@
   Estudio guardado en datos.json → `estudioPools` (rango, ancho, tarifas cobradas+pendientes, % anual, resultado, comparación con "quedarse quieto").
   `cobradoUSD` es una foto del 25-nov (no se recalcula sola).
 - 25-nov 21:55: direcciones cortas al estilo Rabby (0x72...1fbB, con mayúsculas de control). Cuenta «Rabby 7482» (0x7482…7A00) añadida: vacía, sin movimientos en ninguna red.
+- 25-nov 22:15: compra WBTC 0,01650399 (llegó 22:07 de otra cuenta/red, ≈60.233, aproximado) puesta en Aave (mucho) a las 22:08.
