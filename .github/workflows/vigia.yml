@@ -1,4 +1,5 @@
 # 🔔 Vigilante de la cartera: cada 10 minutos mira pools y Aave y avisa al móvil (ntfy).
+# 🧾 Y apunta solo las compras de BTC/ETH/ARB con su precio (compras-auto.enc.json, cifrado).
 name: vigia
 on:
   schedule:
@@ -10,6 +11,8 @@ on:
         type: boolean
         default: false
 concurrency: vigia
+permissions:
+  contents: write   # para subir las compras apuntadas
 jobs:
   mirar:
     runs-on: ubuntu-latest
@@ -26,7 +29,9 @@ jobs:
       - name: Recuperar lo ya avisado
         uses: actions/cache/restore@v4
         with:
-          path: asistente/vigia-estado.json
+          path: |
+            asistente/vigia-estado.json
+            asistente/apuntador-estado.json
           key: vigia-${{ github.run_id }}
           restore-keys: vigia-
       - name: Mirar y avisar
@@ -35,9 +40,25 @@ jobs:
           NTFY_TEMA: ${{ secrets.NTFY_TEMA }}
           PRUEBA: ${{ inputs.prueba && '1' || '' }}
         run: node asistente/vigia.mjs
+      - name: Apuntar compras nuevas
+        env:
+          CLAVE: ${{ secrets.CLAVE }}
+          NTFY_TEMA: ${{ secrets.NTFY_TEMA }}
+        run: node asistente/apuntador.mjs
+      - name: Subir las compras apuntadas (si hay)
+        run: |
+          if [ -n "$(git status --porcelain asistente/compras-auto.enc.json)" ]; then
+            git config user.name "vigia-cartera"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add asistente/compras-auto.enc.json
+            git commit -m "Apunta compras nuevas (automático)"
+            for i in 1 2 3; do git pull --rebase -q && git push -q && break; sleep 5; done
+          fi
       - name: Guardar lo ya avisado
         if: always()
         uses: actions/cache/save@v4
         with:
-          path: asistente/vigia-estado.json
+          path: |
+            asistente/vigia-estado.json
+            asistente/apuntador-estado.json
           key: vigia-${{ github.run_id }}

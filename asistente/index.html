@@ -264,7 +264,7 @@ a.enlace{color:var(--acento);font-weight:600;text-decoration:none}
 <div class="velo" id="velo" hidden><div class="hoja" id="hoja" role="dialog" aria-modal="true"></div></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/js-sha3/0.8.0/sha3.min.js"></script>
-<script src="cadena.js?v=20261125b"></script>
+<script src="cadena.js?v=20261125c"></script>
 <script>
 'use strict';
 const $ = (s) => document.querySelector(s);
@@ -300,7 +300,7 @@ const TIPOS = [
   { id: 'prestamo', e: '🏦', n: 'Préstamos (Aave)' },
 ];
 
-const VERSION = '20261125b';   // ⚠️ cambiarla en cada subida (y la de cadena.js?v=) para que los móviles se actualicen solos
+const VERSION = '20261125c';   // ⚠️ cambiarla en cada subida (y la de cadena.js?v=) para que los móviles se actualicen solos
 // Si la app del móvil lleva días abierta con el programa viejo, al volver a ella mira si hay versión nueva y se recarga
 async function mirarVersion() {
   try {
@@ -315,8 +315,8 @@ let D = null, pos = {}, hist = {}, saldos = {}, precios = {}, aaveVivo = {}, aav
 let tipoActivo = 'liquidez', medida = 'pct';
 
 /* ── 🔐 Candado ─────────────────────────────────── */
-async function descifrar(clave) {
-  const r = await fetch('datos.enc.json', { cache: 'no-store' });
+async function descifrar(clave, fichero = 'datos.enc.json') {
+  const r = await fetch(fichero, { cache: 'no-store' });
   if (!r.ok) throw new Error('No encuentro los datos');
   const c = await r.json();
   const b = (s) => Uint8Array.from(atob(s), (ch) => ch.charCodeAt(0));
@@ -326,10 +326,25 @@ async function descifrar(clave) {
   const plano = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b(c.iv) }, llave, b(c.datos));
   return JSON.parse(new TextDecoder().decode(plano));
 }
+// 🧾 Compras que apunta solo el vigilante (compras-auto.enc.json). Las apuntadas a mano mandan:
+// si coinciden en operación, o en moneda, día y cantidad (±1 %), se queda la manual.
+async function juntarComprasAuto(clave) {
+  let A = null;
+  // primero la copia del repo recién subida (GitHub tarda en publicar la web); si no, la de la web
+  for (const f of ['https://raw.githubusercontent.com/rewendolin/CriptoHouse/main/asistente/compras-auto.enc.json?nv=' + Date.now(), 'compras-auto.enc.json']) {
+    try { A = await descifrar(clave, f); break; } catch (e) {}
+  }
+  if (!A?.compras?.length) return;
+  const man = D.compras || [], no = new Set((D.noEsCompra || []).map((t) => t.toLowerCase()));
+  const repetida = (a) => no.has(a.tx.toLowerCase()) || man.some((m) => (m.tx && m.tx.toLowerCase() === a.tx.toLowerCase())
+    || (m.token === a.token && Math.abs(Date.parse(m.fecha) - Date.parse(a.fecha)) < 864e5 && Math.abs(m.cantidad / a.cantidad - 1) < 0.01));
+  D.compras = [...man, ...A.compras.filter((a) => !repetida(a))];
+}
 async function entrar(clave, recordar) {
   $('#error').textContent = 'Abriendo…';
   try {
     D = await descifrar(clave);
+    await juntarComprasAuto(clave);
     if (recordar) guardar('ch_asist_clave', clave);
     $('#candado').hidden = true; $('#principal').hidden = false;
     arrancar();
@@ -605,7 +620,7 @@ const monedasCompradas = () => [...new Set(['BTC', 'ETH', ...(D.compras || []).m
 function entradas(token) {
   const fam = famDe(token), bs = billeteras();
   const nombreDe = (d) => bs.find((b) => b.dir.toLowerCase() === d)?.nombre || corta(d);
-  const out = (D.compras || []).filter((c) => fam.test(c.token)).map((c) => ({ fecha: c.fecha, cant: c.cantidad, precio: c.precio, pagado: c.pagado ?? c.cantidad * c.precio, donde: c.origen || 'Compra', quien: c.billetera || '', nota: c.nota, exacto: true }));
+  const out = (D.compras || []).filter((c) => fam.test(c.token)).map((c) => ({ fecha: c.fecha, cant: c.cantidad, precio: c.precio, pagado: c.pagado ?? c.cantidad * c.precio, donde: c.origen || 'Compra', quien: c.billetera || '', nota: c.nota, exacto: !c.aprox }));
   for (const [k, h] of Object.entries(aaveHist)) {
     const d = k.split('|')[0];
     for (const o of h.movs || []) {

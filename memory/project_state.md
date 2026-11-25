@@ -56,3 +56,10 @@
 - 25-nov 22:15: compra WBTC 0,01650399 (llegó 22:07 de otra cuenta/red, ≈60.233, aproximado) puesta en Aave (mucho) a las 22:08.
 - 25-nov 22:18: confirmado 1000 USDT → precio 60.591,34.
 - 25-nov 22:25: compras WETH (ETH AAVE pools): 997,76 USDT desde 0x754d…c024 → 0,5914 (1.687,1) y préstamo Aave 1000 USDC → 0,5930 (1.686,3); ambas a Aave. Las compras NO se apuntan solas todavía.
+- 25-nov 22:45: 🧾 APUNTADOR AUTOMÁTICO de compras (asistente/apuntador.mjs, corre en vigia.yml cada 10 min).
+  Mira entradas de WBTC/WETH/ARB en Arbitrum de todas las D.billeteras. Pago con USDC/USDT en la misma operación → precio exacto;
+  llegada de otra red/cuenta sin pago → precio de esa hora (aprox). Ignora: pasos entre cuentas propias, sacar de pool/Aave, <20 $.
+  Guarda cifrado en asistente/compras-auto.enc.json (lo sube el propio Action con commit "Apunta compras nuevas (automático)")
+  y avisa al móvil. La app lo junta con D.compras (la manual manda). Avance por cuenta en la caché (apuntador-estado.json).
+  ⚠️ Antes de hacer push en local: `git pull --rebase` (el Action puede haber subido compras).
+  Cuenta «trading» (0xcd4796…2377b9) añadida a D.billeteras.
