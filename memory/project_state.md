@@ -48,3 +48,7 @@
   Binance bloquea según país → precioPasado prueba data-api.binance.vision, api.binance.com y api.binance.us. Movs de Aave sin precio se reintentan.
 - 24-nov 20:20: la compra de 11:57 (0,01670308 WBTC) eran 1000 USDT desde Rabby → precio 59.869,5 (corregido).
 - 24-nov 20:30: arreglado % disparatado (+187M%) de la pool 5783840: el cierre se contaba como "sacado a medias". Iconos MetaMask/Rabby por cuenta (APP_CUENTA: mucho=MetaMask, resto Rabby).
+- 25-nov: nueva cuenta «Rabby 72bd» (0x72bd08…f81fbb, Rabby). Solo ha tenido 2 pools v3 en Arbitrum (ninguna en otras redes ni v4):
+  5255374 WETH/USDC (fee 0,01 %) y 5255427 WBTC/USDC (0,05 %), abiertas 30-ene-2026.
+  Estudio guardado en datos.json → `estudioPools` (rango, ancho, tarifas cobradas+pendientes, % anual, resultado, comparación con "quedarse quieto").
+  `cobradoUSD` es una foto del 25-nov (no se recalcula sola).

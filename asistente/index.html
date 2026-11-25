@@ -264,7 +264,7 @@ a.enlace{color:var(--acento);font-weight:600;text-decoration:none}
 <div class="velo" id="velo" hidden><div class="hoja" id="hoja" role="dialog" aria-modal="true"></div></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/js-sha3/0.8.0/sha3.min.js"></script>
-<script src="cadena.js?v=20261124c"></script>
+<script src="cadena.js?v=20261125a"></script>
 <script>
 'use strict';
 const $ = (s) => document.querySelector(s);
@@ -294,7 +294,7 @@ const TIPOS = [
   { id: 'prestamo', e: '🏦', n: 'Préstamos (Aave)' },
 ];
 
-const VERSION = '20261124c';   // ⚠️ cambiarla en cada subida (y la de cadena.js?v=) para que los móviles se actualicen solos
+const VERSION = '20261125a';   // ⚠️ cambiarla en cada subida (y la de cadena.js?v=) para que los móviles se actualicen solos
 // Si la app del móvil lleva días abierta con el programa viejo, al volver a ella mira si hay versión nueva y se recarga
 async function mirarVersion() {
   try {
@@ -337,7 +337,7 @@ $('#candado').addEventListener('submit', (e) => { e.preventDefault(); entrar($('
 /* ── 👛 Billeteras: las del candado + las de CriptoHouse + las añadidas aquí ── */
 // Nombres de las cuentas (como salen en Rabby / MetaMask: principio…final)
 const NOMBRE_CUENTA = [['0x87406', 'b30e4', 'mucho'], ['0xd6cff1', '07bc4e', 'ETH AAVE pools'], ['0x01bd4d', 'f0754a', 'METAL XPR'], ['0x111d1d', '0f53c7', 'HBAR 2K'],
-  ['0x1c31c5', 'ee73c1', 'POOL ETH extraAMPLIO'], ['0xcb1426', '0bff8e', 'papas rabby'], ['0xcd4796', '2377b9', 'trading'], ['0xdc724f', '0e7a6a', 'DCA BTC']];
+  ['0x1c31c5', 'ee73c1', 'POOL ETH extraAMPLIO'], ['0xcb1426', '0bff8e', 'papas rabby'], ['0xcd4796', '2377b9', 'trading'], ['0xdc724f', '0e7a6a', 'DCA BTC'], ['0x72bd08', 'f81fbb', 'Rabby 72bd']];
 // 🦊 / 🐰 Icono de la app de la billetera (MetaMask o Rabby). Para cambiar una cuenta de app, se toca APP_CUENTA.
 const APP_CUENTA = { mucho: 'metamask' };   // las demás → Rabby
 const ICONO_APP = {
