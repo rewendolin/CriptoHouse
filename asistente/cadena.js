@@ -445,5 +445,5 @@
     return null;
   }
 
-  g.Cadena = { añadidosV3, posicionesV3, idsV4, leerV4, leerV3, historial, saldos, precios, tipoDireccion, rpc, logs, aave, movimientosAave, precioPasado, AAVE };
+  g.Cadena = { token, añadidosV3, posicionesV3, idsV4, leerV4, leerV3, historial, saldos, precios, tipoDireccion, rpc, logs, aave, movimientosAave, precioPasado, AAVE };
 })(typeof window !== 'undefined' ? window : globalThis);
