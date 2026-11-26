@@ -162,6 +162,12 @@ summary::-webkit-details-marker{display:none}
 summary::after{content:"＋";color:var(--gris2)} details[open] summary::after{content:"－"}
 .dl{padding:0 14px 12px;display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:14px}
 .dl dt{color:var(--gris)} .dl dd{margin:0;text-align:right;font-weight:500}
+.libro-cab{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.libro{display:flex;flex-direction:column;gap:8px}
+.mov{display:grid;grid-template-columns:28px 1fr auto;gap:2px 10px;align-items:center;padding:9px 14px;border-top:1px solid var(--linea);font-size:14px}
+.mov .e{font-size:18px;grid-row:span 2} .mov small{color:var(--gris);grid-column:2} .mov .v{text-align:right;font-weight:600}
+.mov .com{grid-column:2/4;color:var(--gana);font-weight:600;font-size:13px}
+.app-ico.peq{width:14px;height:14px;vertical-align:-2px}
 .nota{padding:0 14px 12px;font-size:13px;color:var(--gris)}
 a.enlace{color:var(--acento);font-weight:600;text-decoration:none}
 .pie{text-align:center;font-size:12px;color:var(--gris2)}
@@ -256,6 +262,12 @@ a.enlace{color:var(--acento);font-weight:600;text-decoration:none}
         <div class="lista" id="lista"></div>
       </section>
 
+      <section class="bloque">
+        <div class="cab-bloque"><h2>📒 Libro <small class="gris-t">(todo lo que pasa, apuntado solo)</small></h2></div>
+        <div class="libro-cab" id="libro-cab"></div>
+        <div class="libro" id="libro"></div>
+      </section>
+
       <p class="pie" id="pie"></p>
     </div>
   </main>
@@ -264,7 +276,7 @@ a.enlace{color:var(--acento);font-weight:600;text-decoration:none}
 <div class="velo" id="velo" hidden><div class="hoja" id="hoja" role="dialog" aria-modal="true"></div></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/js-sha3/0.8.0/sha3.min.js"></script>
-<script src="cadena.js?v=20261125c"></script>
+<script src="cadena.js?v=20261126a"></script>
 <script>
 'use strict';
 const $ = (s) => document.querySelector(s);
@@ -300,7 +312,7 @@ const TIPOS = [
   { id: 'prestamo', e: '🏦', n: 'Préstamos (Aave)' },
 ];
 
-const VERSION = '20261125c';   // ⚠️ cambiarla en cada subida (y la de cadena.js?v=) para que los móviles se actualicen solos
+const VERSION = '20261126a';   // ⚠️ cambiarla en cada subida (y la de cadena.js?v=) para que los móviles se actualicen solos
 // Si la app del móvil lleva días abierta con el programa viejo, al volver a ella mira si hay versión nueva y se recarga
 async function mirarVersion() {
   try {
@@ -340,11 +352,49 @@ async function juntarComprasAuto(clave) {
     || (m.token === a.token && Math.abs(Date.parse(m.fecha) - Date.parse(a.fecha)) < 864e5 && Math.abs(m.cantidad / a.cantidad - 1) < 0.01));
   D.compras = [...man, ...A.compras.filter((a) => !repetida(a))];
 }
+// 📒 Libro de cuentas que rellena solo el vigilante (libro.enc.json): todos los movimientos y las comisiones cobradas
+let LIBRO = [], claveAbierta = null;
+async function leerLibro() {
+  for (const f of ['https://raw.githubusercontent.com/rewendolin/CriptoHouse/main/asistente/libro.enc.json?nv=' + Date.now(), 'libro.enc.json']) {
+    try { LIBRO = (await descifrar(claveAbierta, f)).movs || []; return; } catch (e) {}
+  }
+}
+const comisionesPool = (id) => LIBRO.filter((m) => m.pool === String(id) && m.comisiones).reduce((s, m) => s + m.comisiones.usd, 0);
+const TIPO_MOV = {
+  'compra': ['🛒', 'Compra'], 'venta': ['💱', 'Venta'], 'cambio': ['🔄', 'Cambio'], 'entrada': ['📥', 'Llegó'], 'salida': ['📤', 'Salió'],
+  'paso': ['↔️', 'Paso entre cuentas'], 'aave-poner': ['🏦', 'Metido en Aave'], 'aave-sacar': ['🏦', 'Sacado de Aave'],
+  'aave-pedir': ['💵', 'Préstamo de Aave'], 'aave-devolver': ['✅', 'Devuelto a Aave'], 'pool-abrir': ['💧', 'Pool nueva'],
+  'pool-añadir': ['➕', 'Añadido a pool'], 'pool-sacar': ['➖', 'Sacado de pool'], 'pool-cobro': ['💰', 'Cobro de comisiones'], 'pool-v4': ['💧', 'Pool (v4)'],
+};
+function pintarLibro() {
+  if (!LIBRO.length) { $('#libro').innerHTML = '<p class="nota">Aún sin movimientos apuntados.</p>'; $('#libro-cab').innerHTML = ''; return; }
+  const mes = new Date().toISOString().slice(0, 7);
+  const com = LIBRO.filter((m) => m.comisiones), comMes = com.filter((m) => m.fecha.startsWith(mes));
+  const suma = (a) => a.reduce((s, m) => s + m.comisiones.usd, 0);
+  $('#libro-cab').innerHTML = `<span class="chip gana">💰 Comisiones cobradas: ${usd(suma(com), 2)}</span>
+    <span class="chip">este mes ${usd(suma(comMes), 2)}</span><span class="chip">🧾 ${LIBRO.length} movimientos</span>`;
+  const dias = {};
+  [...LIBRO].reverse().forEach((m) => { const d = new Date(m.fecha).toLocaleDateString('sv-SE'); (dias[d] ??= []).push(m); });
+  const hoy = new Date().toLocaleDateString('sv-SE'), abiertos = new Set([...document.querySelectorAll('#libro details[open]')].map((d) => d.dataset.k));
+  $('#libro').innerHTML = Object.entries(dias).map(([d, ms], i) => {
+    const c = ms.filter((m) => m.comisiones).reduce((s, m) => s + m.comisiones.usd, 0);
+    const abrir = abiertos.size ? abiertos.has(d) : i === 0;
+    return `<details data-k="${d}" ${abrir ? 'open' : ''}><summary><span>${d === hoy ? 'Hoy' : fecha(ms[0].fecha)} · ${ms.length} ${ms.length === 1 ? 'movimiento' : 'movimientos'}</span>${c ? `<span class="chip gana" style="margin-left:auto;margin-right:8px">💰 +${usd(c, 2)}</span>` : ''}</summary>
+      ${ms.map((m) => {
+        const [e, n] = TIPO_MOV[m.tipo] || ['•', m.tipo];
+        const toks = Object.entries(m.mov || {}).map(([s, q]) => (q > 0 ? '+' : '−') + cant(Math.abs(q), s.replace(/^W(?=BTC|ETH)/, ''))).join(' · ');
+        return `<div class="mov"><span class="e">${e}</span><span>${n}${m.pool ? ' #' + esc(m.pool) : ''}${m.de ? ' (de ' + esc(m.de) + ')' : ''}</span><span class="v num">${usd(m.usd, 0)}</span>
+          <small><span class="app-ico peq">${ICONO_APP[APP_CUENTA[m.cuenta] || 'rabby']}</span> ${esc(m.cuenta)} · ${hora(m.fecha)}${toks ? ' · ' + toks : ''}</small>
+          ${m.comisiones?.usd ? `<span class="com">💰 Comisiones cobradas: +${usd(m.comisiones.usd, 2)}</span>` : ''}</div>`;
+      }).join('')}</details>`;
+  }).join('');
+}
 async function entrar(clave, recordar) {
   $('#error').textContent = 'Abriendo…';
   try {
     D = await descifrar(clave);
     await juntarComprasAuto(clave);
+    claveAbierta = clave; leerLibro().then(pintarLibro);   // sin esperar: el libro llega un momento después
     if (recordar) guardar('ch_asist_clave', clave);
     $('#candado').hidden = true; $('#principal').hidden = false;
     arrancar();
@@ -402,7 +452,7 @@ function arrancar() {
   cargar();
   setInterval(() => { if (!document.hidden) cargar(); }, 90000);
   // Al volver a la app (desde otra app o con la pantalla apagada) se recarga enseguida
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) { mirarVersion(); cargar(); } });
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) { mirarVersion(); cargar(); leerLibro().then(pintarLibro); } });
   mirarVersion();
 }
 $('#refrescar').addEventListener('click', () => cargar());
@@ -708,7 +758,7 @@ function pintar() {
     <div class="reparto">${trozos.map((t, i) => `<span style="flex:${t.v};background:${t.c};opacity:${1 - (i % 2) * 0.35}"></span>`).join('')}</div>
     <div class="leyenda">${trozos.map((t, i) => `<span><i style="background:${t.c};opacity:${1 - (i % 2) * 0.35}"></i>${esc(t.n)} ${num(t.v / total * 100, 0)} %</span>`).join('')}</div>
     <div class="leyenda">💧 Pools: <b style="margin:0 4px">${usdS(pnl, 0)}</b> (${dep ? pct(pnl / dep * 100) : '—'}) · 🏦 Aave: <b style="margin-left:4px">${usdS(pnlAave, 0)}</b></div>`;
-  pintarRanking(ps, ls); pintarTipos(ps, cs, ls); pintarLista(ps, cs, ls);
+  pintarRanking(ps, ls); pintarTipos(ps, cs, ls); pintarLista(ps, cs, ls); pintarLibro();
   $('#pie').textContent = 'Leído de la cadena ' + fechaHora(ultimaCarga) + ' · se actualiza solo cada 90 s';
 }
 
@@ -837,6 +887,8 @@ function tablaDatos(p) {
   }
   if (h.retirado) f.push(['Sacaste', puesto(h.retirado, p.par)]);
   if (h.cobradoUSD) f.push(['Tarifas ya cobradas', usd(h.cobradoUSD)]);
+  const cl = comisionesPool(p.id);
+  if (cl) f.push(['💰 Comisiones cobradas (libro)', '<span class="gana-t">+' + usd(cl, 2) + '</span>']);
   if (p.anual != null) f.push(['Rentab. al año', pct(p.anual)]);
   return `<dl class="dl num">${f.map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join('')}</dl>`;
 }
