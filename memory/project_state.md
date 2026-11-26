@@ -63,3 +63,9 @@
   y avisa al móvil. La app lo junta con D.compras (la manual manda). Avance por cuenta en la caché (apuntador-estado.json).
   ⚠️ Antes de hacer push en local: `git pull --rebase` (el Action puede haber subido compras).
   Cuenta «trading» (0xcd4796…2377b9) añadida a D.billeteras.
+
+## 26-nov-2026 — 📒 Libro de movimientos + comisiones cobradas
+- asistente/libro.mjs (vigia.yml, cada 10 min) apunta todos los movimientos de Arbitrum → libro.enc.json (cifrado, se sube solo).
+- Comisiones = Collect − DecreaseLiquidity. Relleno desde 21-nov: 56 movimientos, 102,04 $ de comisiones.
+- App: sección «📒 Libro» + «Comisiones cobradas (libro)» en cada pool. VERSION 20261126a.
+- Pendiente: no mira tokens fuera de WBTC/WETH/ARB/USDC/USDT/DAI ni ETH nativo; cuenta 0x7482… vacía (confirmar dirección).
