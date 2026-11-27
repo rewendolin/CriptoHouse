@@ -280,10 +280,11 @@
   const TOKENS = {
     ethereum: { USDC: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', USDT: '0xdac17f958d2ee523a2206206994597c13d831ec7', WBTC: '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599', WETH: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2', DAI: '0x6b175474e89094c44da98b954eedeac495271d0f' },
     arbitrum: { USDC: '0xaf88d065e77c8cc2239327c5edb3a432268e5831', 'USDC.e': '0xff970a61a04b1ca14834a43f5de4533ebddb5cc8', USDT: '0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9', WBTC: '0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f', WETH: '0x82af49447d8a07e3bd95bd0d56f35241523fbab1', ARB: '0x912ce59144191c1204e64559fe8253a0e49e6548' },
-    base: { USDC: '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', WETH: '0x4200000000000000000000000000000000000006', cbBTC: '0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf' },
+    base: { USDC: '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', WETH: '0x4200000000000000000000000000000000000006', cbBTC: '0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf', AERO: '0x940181a94a35a4569e4529a3cdfb74e38fd98631' },
     optimism: { USDC: '0x0b2c639c533813f4aa9d7837caf62653d097ff85', WETH: '0x4200000000000000000000000000000000000006', OP: '0x4200000000000000000000000000000000000042' },
     polygon: { USDC: '0x3c499c542cef5e3811e1192ce70d8cc03d5c3359', USDT: '0xc2132d05d31c914a87c6611c10748aeb04b58e8f', WETH: '0x7ceb23fd6bc0add59e62ac25578270cff1b9f619', WBTC: '0x1bfd67037b42cf73acf2047067bd4f2c47d9bfd6' },
-    bsc: { USDT: '0x55d398326f99059ff775485246999027b3197955', USDC: '0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d', BTCB: '0x7130d2a12b9bcbfae4f2634d864a1ee1ce3ead9c', ETH: '0x2170ed0880ac9a755fd29b2688956bd959f933f8' },
+    bsc: { USDT: '0x55d398326f99059ff775485246999027b3197955', USDC: '0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d', BTCB: '0x7130d2a12b9bcbfae4f2634d864a1ee1ce3ead9c', ETH: '0x2170ed0880ac9a755fd29b2688956bd959f933f8',
+      XRP: '0x1d2f0da169ceb9fc7b3144628db156f3f6c60dbe', VELO: '0xf486ad071f3bee968384d2e39e2d8af0fcf6fd46' },
   };
   const NATIVO = { ethereum: 'ETH', arbitrum: 'ETH', base: 'ETH', optimism: 'ETH', polygon: 'POL', bsc: 'BNB', avalanche: 'AVAX', gnosis: 'xDAI' };
 
@@ -356,7 +357,7 @@
   /* ── Precios (CoinGecko) ── */
   const GECKO = { BTC: 'bitcoin', WBTC: 'bitcoin', BTCB: 'bitcoin', cbBTC: 'bitcoin', ETH: 'ethereum', WETH: 'ethereum', SOL: 'solana', XRP: 'ripple',
     XLM: 'stellar', HBAR: 'hedera-hashgraph', XDC: 'xdce-crowd-sale', BNB: 'binancecoin', POL: 'polygon-ecosystem-token', AVAX: 'avalanche-2',
-    ARB: 'arbitrum', OP: 'optimism', USDC: 'usd-coin', 'USDC.e': 'usd-coin', USDT: 'tether', DAI: 'dai', xDAI: 'xdai', SHX: 'stronghold-token', AAVE: 'aave', TRX: 'tron' };
+    ARB: 'arbitrum', OP: 'optimism', USDC: 'usd-coin', 'USDC.e': 'usd-coin', USDT: 'tether', DAI: 'dai', xDAI: 'xdai', SHX: 'stronghold-token', AAVE: 'aave', TRX: 'tron', VELO: 'velo', AERO: 'aerodrome-finance' };
   async function precios(simbolos) {
     const ids = [...new Set(simbolos.map((s) => GECKO[s]).filter(Boolean))];
     const out = {};
