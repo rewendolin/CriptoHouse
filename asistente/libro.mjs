@@ -93,30 +93,28 @@ if (DESDE) {   // buscar el bloque de esa fecha (búsqueda partida por la mitad)
   while (hi - lo > 1000) { const m = Math.floor((lo + hi) / 2); const bl = await C.rpc(RED, 'eth_getBlockByNumber', ['0x' + m.toString(16), false]); if (Number(BigInt(bl.timestamp)) < t) lo = m; else hi = m; }
   inicioManual = lo;
 }
-// Leer registros en tramos de 2M bloques, con reintentos; si un tramo falla del todo se AVISA (antes se perdía en silencio)
+// Leer registros por tramos con reintentos; si un tramo grande falla, se parte en trozos pequeños.
+// Si aun así falla, se AVISA (antes se perdía en silencio y faltaban movimientos)
+async function tramo(filtro, s, e, intentos = 6) {
+  for (let i = 0; ; i++) {
+    try { return await C.rpc(RED, 'eth_getLogs', [{ ...filtro, fromBlock: '0x' + s.toString(16), toBlock: '0x' + e.toString(16) }]); }
+    catch (err) { if (i >= intentos - 1) throw err; await new Promise((r) => setTimeout(r, 800 * (i + 1))); }
+  }
+}
 async function logsSeguro(filtro, desde, hasta) {
   const out = [];
-  for (let s = desde; s <= hasta; s += 2_000_000) {
-    const e = Math.min(s + 2_000_000 - 1, hasta);
-    for (let i = 0; ; i++) {
-      try { out.push(...await C.rpc(RED, 'eth_getLogs', [{ ...filtro, fromBlock: '0x' + s.toString(16), toBlock: '0x' + e.toString(16) }])); break; }
-      catch (err) { if (i >= 5) throw err; await new Promise((r) => setTimeout(r, 1000 * (i + 1))); }
-    }
+  for (let s = desde; s <= hasta; s += 10_000_000) {
+    const e = Math.min(s + 10_000_000 - 1, hasta);
+    try { out.push(...await tramo(filtro, s, e, 3)); }
+    catch (err) { for (let t = s; t <= e; t += 1_000_000) out.push(...await tramo(filtro, t, Math.min(t + 999_999, e))); }
   }
   return out;
-}
-// Primer bloque con operaciones de la cuenta (para no recorrer años vacíos al rellenar el pasado)
-async function primeraOperacion(dirC, lo) {
-  let hi = fin;
-  if (Number(await C.rpc(RED, 'eth_getTransactionCount', [dirC, '0x' + hi.toString(16)])) === 0) return lo;
-  while (hi - lo > 50_000) { const m = Math.floor((lo + hi) / 2); if (Number(await C.rpc(RED, 'eth_getTransactionCount', [dirC, '0x' + m.toString(16)])) > 0) hi = m; else lo = m; }
-  return Math.max(1, lo - 2_000_000);   // un margen hacia atrás por si recibió dinero antes de su primera operación
 }
 const nuevos = [];
 for (const w of mias) {
   if (SOLO && w.dir.toLowerCase() !== SOLO.toLowerCase()) continue;
   const clave = w.dir.toLowerCase(), yo = pad(w.dir);
-  const desde = inicioManual != null ? await primeraOperacion(w.dir, inicioManual).catch(() => inicioManual) : (L.hasta[clave] ? L.hasta[clave] + 1 : fin - 3000);
+  const desde = inicioManual ?? (L.hasta[clave] ? L.hasta[clave] + 1 : fin - 3000);
   if (desde > fin) continue;
   let ls = [], ok = true;
   try { for (const a of TOKENS) for (const t of [[EV.tr, yo], [EV.tr, null, yo]]) ls.push(...await logsSeguro({ address: a, topics: t }, desde, fin)); }
