@@ -75,3 +75,4 @@
 - Relleno completo DESDE=2024-01-01 en marcha en local: al acabar, subir libro.enc.json (git pull --rebase antes).
 - El robot apuntó solo 3 compras del 26-nov (2 WETH exactas, 1 WBTC ≈60.821 aproximada). Pendiente: que Glenda diga el precio real del WBTC y el de compra de 0,3645 ETH y 0,0120 BTC que salieron de «trading».
 - 27-nov 03:30: libro rellenado desde ago-2025 (362 movs, 545,57 $ comisiones; Rabby 72bd 243,32 $). Quitado primeraOperacion (el nodo no da el nonce antiguo). logsSeguro: tramos 10M → si falla, trozos de 1M con reintentos. ⚠️ C.logs de cadena.js sigue perdiendo tramos en silencio si un nodo falla (afecta a la app).
+- 27-nov 20:40: cuenta Solana 7oGK (7oGKm5…cESm6) añadida. cadena.js lee USDC/USDT/uXRP de Solana (lista MINT). VERSION 20261127a. Tiene 1053 «IOTA Net» y 1 NFT sin precio → ignorados (posible spam).
