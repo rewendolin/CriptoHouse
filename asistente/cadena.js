@@ -308,7 +308,8 @@
         const r = await fetch('https://api.mainnet-beta.solana.com', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'getBalance', params: [addr] }) });
         const j = await r.json(), out = [{ red: 'solana', sym: 'SOL', cant: (j.result?.value || 0) / 1e9 }];
         // Monedas dentro de la cuenta de Solana: solo las conocidas (las demás suelen ser regalos-trampa sin valor)
-        const MINT = { EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v: 'USDC', Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB: 'USDT', '2jcHBYd9T2Mc9nhvFEBCDuBN1XjbbQUVow67WGWhv6zT': 'XRP' };
+        const MINT = { EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v: 'USDC', Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB: 'USDT', '2jcHBYd9T2Mc9nhvFEBCDuBN1XjbbQUVow67WGWhv6zT': 'XRP',
+          cbbtcf3aa214zXHbiAZQwf4122FBYbraNdFqgw4iMij: 'cbBTC', GbbesPbaYh5uiAZSYNXTc7w9jty1rpg3P9L4JeN4LkKc: 'TRX' };
         for (const prog of ['TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA', 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb']) {
           try {
             const t = await (await fetch('https://api.mainnet-beta.solana.com', { method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -355,7 +356,7 @@
   /* ── Precios (CoinGecko) ── */
   const GECKO = { BTC: 'bitcoin', WBTC: 'bitcoin', BTCB: 'bitcoin', cbBTC: 'bitcoin', ETH: 'ethereum', WETH: 'ethereum', SOL: 'solana', XRP: 'ripple',
     XLM: 'stellar', HBAR: 'hedera-hashgraph', XDC: 'xdce-crowd-sale', BNB: 'binancecoin', POL: 'polygon-ecosystem-token', AVAX: 'avalanche-2',
-    ARB: 'arbitrum', OP: 'optimism', USDC: 'usd-coin', 'USDC.e': 'usd-coin', USDT: 'tether', DAI: 'dai', xDAI: 'xdai', SHX: 'stronghold-token', AAVE: 'aave' };
+    ARB: 'arbitrum', OP: 'optimism', USDC: 'usd-coin', 'USDC.e': 'usd-coin', USDT: 'tether', DAI: 'dai', xDAI: 'xdai', SHX: 'stronghold-token', AAVE: 'aave', TRX: 'tron' };
   async function precios(simbolos) {
     const ids = [...new Set(simbolos.map((s) => GECKO[s]).filter(Boolean))];
     const out = {};
