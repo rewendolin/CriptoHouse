@@ -69,3 +69,8 @@
 - Comisiones = Collect − DecreaseLiquidity. Relleno desde 21-nov: 56 movimientos, 102,04 $ de comisiones.
 - App: sección «📒 Libro» + «Comisiones cobradas (libro)» en cada pool. VERSION 20261126a.
 - Pendiente: no mira tokens fuera de WBTC/WETH/ARB/USDC/USDT/DAI ni ETH nativo; cuenta 0x7482… vacía (confirmar dirección).
+
+## 27-nov-2026 — Arreglo del libro + compras del 26-nov
+- libro.mjs: lee en tramos de 2M bloques con reintentos (antes C.logs con 9M fallaba EN SILENCIO y perdía movimientos). DESDE busca la 1.ª operación de cada cuenta; SOLO=0x… para una cuenta.
+- Relleno completo DESDE=2024-01-01 en marcha en local: al acabar, subir libro.enc.json (git pull --rebase antes).
+- El robot apuntó solo 3 compras del 26-nov (2 WETH exactas, 1 WBTC ≈60.821 aproximada). Pendiente: que Glenda diga el precio real del WBTC y el de compra de 0,3645 ETH y 0,0120 BTC que salieron de «trading».
