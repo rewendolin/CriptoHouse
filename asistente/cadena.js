@@ -306,7 +306,17 @@
     try {
       if (tipo === 'SOL') {
         const r = await fetch('https://api.mainnet-beta.solana.com', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'getBalance', params: [addr] }) });
-        const j = await r.json(); return [{ red: 'solana', sym: 'SOL', cant: (j.result?.value || 0) / 1e9 }];
+        const j = await r.json(), out = [{ red: 'solana', sym: 'SOL', cant: (j.result?.value || 0) / 1e9 }];
+        // Monedas dentro de la cuenta de Solana: solo las conocidas (las demás suelen ser regalos-trampa sin valor)
+        const MINT = { EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v: 'USDC', Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB: 'USDT', '2jcHBYd9T2Mc9nhvFEBCDuBN1XjbbQUVow67WGWhv6zT': 'XRP' };
+        for (const prog of ['TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA', 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb']) {
+          try {
+            const t = await (await fetch('https://api.mainnet-beta.solana.com', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'getTokenAccountsByOwner', params: [addr, { programId: prog }, { encoding: 'jsonParsed' }] }) })).json();
+            for (const c of t.result?.value || []) { const i = c.account.data.parsed.info; if (MINT[i.mint]) out.push({ red: 'solana', sym: MINT[i.mint], cant: Number(i.tokenAmount.uiAmount) || 0 }); }
+          } catch (e) {}
+        }
+        return out;
       }
       if (tipo === 'XRP') {
         const r = await fetch('https://xrplcluster.com', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ method: 'account_info', params: [{ account: addr, ledger_index: 'current' }] }) });
