@@ -80,3 +80,4 @@
 - 27-nov 21:00: + Rabby 2bea, Rabby b250 (b250 sin nada en ninguna red). App: pools dentro de cada cuenta en Billeteras, cuenta en el ranking, timeout 10 s en descifrar. VERSION 20261127b. Libro rehaciéndose (11 cuentas) en scratchpad/rehacer.
 - 27-nov 20:50: + 5 cuentas Solana (3VfY cbBTC, 8rPV TRX+XVM polvo; 6rp9/Hm4D/GMxf nunca usadas). MINT + cbBTC, TRX (GECKO tron). VERSION 20261127c.
 - 27-nov 21:00: TOKENS + bsc XRP/VELO, base AERO (GECKO velo, aerodrome-finance). Phantom @TiaGilita: «Cuenta 7» = ETH AAVE pools (0xd6cf, misma cuenta importada en Phantom y Rabby); «XRP» = Rabby b250 (446,8 AERO); «hbar 2k shx 100» = HBAR 2K. trading tiene 567 XRP en BSC. VERSION 20261127d. Pendiente: 2bea en Base (Glenda dice que hay envueltos; no encontrados).
+- 27-nov 21:55: libro rehecho con 11 cuentas → 556 movs, 751,78 $ comisiones (desde ago-2025). Subido.
